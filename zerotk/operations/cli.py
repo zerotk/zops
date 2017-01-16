@@ -16,20 +16,41 @@ def req():
 
 
 @req.command()
-def update():
+@click.option('--update', default=False, help='Updates all libraries versions.')
+def compile(update):
     """
     Update requirements
     """
-    params = ['--no-index', '-r']
-    if update:
-        params += ['-U']
+    from glob import glob
 
-    _pip_compile(
-        *params + ['requirements/production.in', '-o', 'requirements/production.txt']
-    )
-    _pip_compile(
-        *params + ['requirements/production.in', 'requirements/development.in', '-o', 'requirements/development.txt']
-    )
+    def get_input_filenames(filename):
+        import os
+
+        result = []
+        include_lines = [i for i in open(filename, 'r').readlines() if i.startswith('#!INCLUDE')]
+        for i_line in include_lines:
+            included_filename = i_line.split(' ', 1)[-1].strip()
+            included_filename = os.path.join(os.path.dirname(filename), included_filename)
+            result.append(included_filename)
+        result.append(filename)
+        return result
+
+    def get_output_filename(filename):
+        import os
+        return os.path.splitext(filename)[0] + '.txt'
+
+    base_params = ['--no-index', '-r']
+    if update:
+        base_params += ['-U']
+
+    for i_filename in glob('requirements/*.in'):
+        output_filename = get_output_filename(i_filename)
+        input_filenames = get_input_filenames(i_filename)
+        click.echo('{}: generating from {}'.format(output_filename, ', '.join(input_filenames)))
+
+        params = base_params + input_filenames + ['-o', output_filename]
+        click.echo('$ pip-compile {}'.format(' '.join(params)))
+        _pip_compile(*params)
 
 
 def _pip_compile(*args):
