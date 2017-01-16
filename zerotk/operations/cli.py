@@ -6,11 +6,11 @@ click.disable_unicode_literals_warning = True
 
 
 @click.group()
-def zops():
+def main():
     pass
 
 
-@zops.group()
+@main.group()
 def req():
     pass
 
@@ -65,4 +65,4 @@ def _pip_compile(*args):
 
 
 if __name__ == '__main__':
-    zops()
+    main()
