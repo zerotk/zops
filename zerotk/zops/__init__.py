@@ -31,4 +31,4 @@ def ensure_dir(path):
     import click
     import os
     click.echo('DIRECTORY: {}'.format(path))
-    os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
