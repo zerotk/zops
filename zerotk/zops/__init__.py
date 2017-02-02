@@ -32,3 +32,28 @@ def ensure_dir(path):
     import os
     click.echo('DIRECTORY: {}'.format(path))
     os.makedirs(path, exist_ok=True)
+
+
+class Console(object):
+
+    TITLE_COLOR = 'yellow'
+    EXECUTION_COLOR = 'green'
+    OUTPUT_COLOR = 'white'
+
+    @classmethod
+    def title(cls, *args):
+        cls._secho(['#'] + list(args), cls.TITLE_COLOR)
+
+    @classmethod
+    def execution(cls, *args):
+        cls._secho(['$'] + list(args), cls.EXECUTION_COLOR)
+
+    @classmethod
+    def output(cls, *args):
+        cls._secho(args, cls.OUTPUT_COLOR)
+
+    @classmethod
+    def _secho(cls, args, fg, join_char=' '):
+        import click
+        message = join_char.join(args)
+        click.secho(message, fg=fg)
