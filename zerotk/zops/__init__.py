@@ -3,18 +3,16 @@
 
 def setenv(name, value):
     import os
-    import click
     os.environ[name] = value
-    click.echo('{}: {}'.format(name, os.environ[name]))
+    Console.setting('{}={}'.format(name, os.environ[name]))
 
 
 def add_pythonpath(value):
     import sys
     import os
-    import click
     value = os.path.normpath(value)
-    sys.path.append(value)
-    click.echo('SYS.PATH: {}'.format(value))
+    sys.path.insert(0, value)
+    Console.setting('SYS.PATH={}'.format(value))
 
 
 def call_main(main_func, *argv):
@@ -28,16 +26,16 @@ def call_main(main_func, *argv):
 
 
 def ensure_dir(path):
-    import click
     import os
-    click.echo('DIRECTORY: {}'.format(path))
     os.makedirs(path, exist_ok=True)
+    Console.setting('DIRECTORY: {}'.format(path))
 
 
 class Console(object):
 
     TITLE_COLOR = 'yellow'
     EXECUTION_COLOR = 'green'
+    SETTING_COLOR = 'blue'
     OUTPUT_COLOR = 'white'
 
     @classmethod
@@ -47,6 +45,10 @@ class Console(object):
     @classmethod
     def execution(cls, *args):
         cls._secho(['$'] + list(args), cls.EXECUTION_COLOR)
+
+    @classmethod
+    def setting(cls, *args):
+        cls._secho(['!'] + list(args), cls.SETTING_COLOR)
 
     @classmethod
     def output(cls, *args):
