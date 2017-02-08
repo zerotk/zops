@@ -51,6 +51,10 @@ class Console(object):
         cls._secho(['!'] + list(args), cls.SETTING_COLOR)
 
     @classmethod
+    def item(cls, *args):
+        cls._secho(['*'] + list(args), cls.OUTPUT_COLOR)
+
+    @classmethod
     def output(cls, *args):
         cls._secho(args, cls.OUTPUT_COLOR)
 
