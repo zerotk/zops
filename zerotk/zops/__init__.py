@@ -37,6 +37,8 @@ class Console(object):
     EXECUTION_COLOR = 'green'
     SETTING_COLOR = 'blue'
     OUTPUT_COLOR = 'white'
+    INFO_COLOR = 'white'
+    DEBUG_COLOR = 'red'
 
     @classmethod
     def title(cls, *args):
@@ -57,6 +59,18 @@ class Console(object):
     @classmethod
     def output(cls, *args):
         cls._secho(args, cls.OUTPUT_COLOR)
+
+    @classmethod
+    def response(cls, *args):
+        cls._secho(['>'] + list(args), cls.OUTPUT_COLOR)
+
+    @classmethod
+    def info(cls, *args):
+        cls._secho(['i'] + list(args), cls.INFO_COLOR)
+
+    @classmethod
+    def debug(cls, *args):
+        cls._secho(['***'] + list(args), cls.DEBUG_COLOR)
 
     @classmethod
     def _secho(cls, args, fg, join_char=' '):
