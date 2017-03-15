@@ -21,6 +21,8 @@ def call_main(main_func, *argv):
     sys.argv = [''] + list(argv)
     try:
         return main_func()
+    except SystemExit as e:
+        return e.code
     finally:
         sys.argv = old_argv
 
