@@ -68,7 +68,7 @@ class Console(object):
 
     @classmethod
     def info(cls, *args):
-        cls._secho(['i'] + list(args), cls.INFO_COLOR)
+        cls._secho(['\U0001F6C8'] + list(args), cls.INFO_COLOR)
 
     @classmethod
     def debug(cls, *args):
@@ -78,4 +78,5 @@ class Console(object):
     def _secho(cls, args, fg, join_char=' '):
         import click
         message = join_char.join(args)
+        message.rstrip('\n')
         click.secho(message, fg=fg)
