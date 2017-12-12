@@ -55,8 +55,9 @@ class Console(object):
         cls._secho(['!'] + list(args), cls.SETTING_COLOR)
 
     @classmethod
-    def item(cls, *args):
-        cls._secho(['*'] + list(args), cls.OUTPUT_COLOR)
+    def item(cls, *args, ident=0):
+        prefix = cls._idented('*', ident)
+        cls._secho([prefix] + list(args), cls.OUTPUT_COLOR)
 
     @classmethod
     def output(cls, *args):
@@ -73,6 +74,10 @@ class Console(object):
     @classmethod
     def debug(cls, *args):
         cls._secho(['***'] + list(args), cls.DEBUG_COLOR)
+
+    @classmethod
+    def _idented(cls, text, ident):
+        return '  ' * ident + text
 
     @classmethod
     def _secho(cls, args, fg, join_char=' '):
