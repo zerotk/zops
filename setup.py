@@ -3,44 +3,51 @@
 from setuptools import setup
 
 setup(
-    name='zerotk.zops',
+    name='zz',
     use_scm_version=True,
 
     author="Alexandre Andrade",
     author_email='kaniabi@gmail.com',
 
-    url='https://github.com/zerotk/zops',
+    url='https://github.com/zerotk/zz',
 
-    description="Extensible command line operations for software development.",
-    long_description="Extensible command line operations for software development.",
+    description="Command line operations.",
+    long_description="Command line operations.",
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.11',
     ],
-    keywords='development environment, shell, operations',
+#    keywords='development environment, shell, operations',
 
-    include_package_data=True,
-    packages=['zerotk', 'zerotk.zops'],
-    namespace_packages=['zerotk'],
+#    include_package_data=True,
+#    packages=['zerotk', 'zerotk.zops'],
+#    namespace_packages=['zerotk'],
     entry_points={
         'console_scripts': [
-            'zops=zerotk.zops.cli:main'
+            'zz=zz.__main__:main'
         ]
     },
 
     install_requires=[
         'click',
-        'click-plugins',
+        # AWS
+        "boto3",
+        "tabulate",
+        "pyyaml",
+        # Anatomy
+        "ansible",  # Just to use the filter 'combine'.
+        "jinja2",
+        "stringcase",
     ],
     setup_requires=['setuptools_scm'],
-    tests_require=[],
-
+    tests_require=[
+        "pytest",
+        "datadiff",
+    ],
     license="MIT license",
 )

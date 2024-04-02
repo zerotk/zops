@@ -1,0 +1,269 @@
+aws_owners:
+  - "self"
+  - "050946403637"  # mi-shared
+  - "624664959560"  # tier1
+  - "150454740545"  # tier3
+  - "135144572806"  # polestar
+  - "299378319612"  # internal
+
+# Maps directories with cluster names.
+clusters_map:
+  "/ami.unhaggle": "unhaggle-ami"
+  "/creditapp": "t3can"
+  "/mi-cluster": "mi-dev"
+  "/paymentinsights": "paymentinsights"
+  "/pi-cluster": "paymentinsights"
+  "/polestar": "polestar"
+  "/polestar-cluster": "polestar"
+  "/t3can-cluster": "t3can"
+  "/t3usa-cluster": "t3usa"
+  "/tier1": "tier1"
+  "/tier1-cluster": "tier1"
+  "/tier1_audi": "tier1_audi"
+  "/tier3": "tier3"
+  "/t3can": "tier3"
+  "/t3usa": "t3usa"
+  "/unhaggle": "unhaggle"
+  "/unhaggle-ami": "unhaggle-ami"
+  "/unhaggle-cluster": "unhaggle"
+
+# Maps environments (dev, prod, stage, etc.) and directories (tier1, tier3,
+# peb, etc.) to aws profiles. This is used to try to guess the aws profile
+# from a seed (tier3-dev, peb-prod, tier1-stage, etc.)
+aws_profiles_map:
+  dev: "mi-dev"
+  intranet: "internal"
+  nomad: "internal"
+  peb: "tier3"
+  pi: "paymentinsights"
+  qa: "mi-qa"
+  sandbox: "mi-sandbox"
+  stage: "mi-stage"
+
+clusters:
+  # This is the account used to build, provide and consume AMIs.
+  unhaggle-ami:
+    aws_id: 299378319612
+    regions:
+      - ca-central-1
+      - us-east-2
+    sentry_id:
+      dev: unhaggle-dev
+      stage: unhaggle-stage
+      qa: unhaggle-qa
+      prod: unhaggle-prod
+    images:
+      - base
+      - basedocker
+      - app
+      - tunnel
+      - ftp
+      - redash
+      - nomad
+      - cluster
+
+  internal:
+    aws_id: 299378319612
+    regions:
+      - us-east-2
+      - ca-central-1
+    images:
+      - app
+      - tunnel
+
+  mi-shared:
+    aws_id: 050946403637
+    profile: mi-shared
+    regions:
+      - ca-central-1
+    images: []
+
+  mi-sandbox:
+    aws_id: 698588692291
+    profile: mi-sandbox
+    regions:
+      - ca-central-1
+    images: []
+
+  mi-dev:
+    aws_id: 418278274242
+    profile: mi-dev
+    regions:
+      - ca-central-1
+    images: []
+
+  as-stage:
+    aws_id: 211125390109
+    profile: as-stage
+    regions:
+      - ca-central-1
+    images: []
+
+  as-qa:
+    aws_id: 730335224882
+    profile: as-qa
+    regions:
+      - ca-central-1
+    images: []
+
+  as-prod:
+    aws_id: 905418270840
+    profile: as-prod
+    regions:
+      - ca-central-1
+    images: []
+
+  as-dev:
+    aws_id: 267504176449
+    profile: as-dev
+    regions:
+      - ca-central-1
+    images: []
+
+  mi-stage:
+    aws_id: 756814365861
+    profile: mi-stage
+    regions:
+      - ca-central-1
+      - us-east-2
+    images: []
+
+  mi-qa:
+    aws_id: 350718436548
+    profile: mi-qa
+    regions:
+      - ca-central-1
+      - us-east-2
+    images: []
+
+  mi-prod:
+    aws_id: 687374155505
+    profile: mi-prod
+    regions:
+      - ca-central-1
+    images: []
+
+  tier1:
+    aws_id: 624664959560
+    profile: tier1_cluster
+    regions:
+      - ca-central-1
+    sentry_id:
+      dev: tier1-dev
+      stage: moto-stage
+      prod: t1-moto-prod
+    newrelic_id:
+      dev: 518442355
+      stage: 544578180
+      prod: 516056459
+    psql_version: 12
+
+  creditapp:
+    aws_id: 150454740545
+    profile: tier3_cluster
+    regions:
+      - ca-central-1
+    images:
+      - app
+      - tunnel
+      - clean
+      - ftp
+    sentry_id:
+      dev: creditapp-dev
+      stage: creditapp-stage
+      qa: creditapp-qa
+      prod: creditapp-prod
+    newrelic_id:
+      prod: 576760411
+
+  polestar:
+    aws_id: 135144572806
+    profile: polestar
+    regions:
+      - us-east-2
+    sentry_id:
+      dev: polestar-dev
+      stage: polestar-stage
+      qa: polestar-qa
+      prod: polestar-prod
+    newrelic_id:
+      prod: 531489707
+    images:
+      - app
+      - tunnel
+      - clean
+      - ftp
+
+  tier3:
+    aws_id: 150454740545
+    profile: tier3_cluster
+    regions:
+      - ca-central-1
+      - us-east-2
+    images:
+      - app
+      - tunnel
+      - clean
+      - ftp
+    newrelic_id:
+      dev: 560968686
+      prod: 85184725
+      stage: 343583357
+      qa: 547461357
+    sentry_id:
+      # TODO: How to define Sentry environment?
+      dev: motocommerce-py-stage
+      stage: motocommerce-py-stage
+      qa: motocommerce-py-stage
+      prod: motocommerce-py-prod
+
+  t3can:
+    aws_id: 150454740545
+    profile: tier3_cluster
+    project: tier3
+    regions:
+      - ca-central-1
+    images:
+      - app
+      - tunnel
+      - clean
+      - ftp
+
+  t3usa:
+    aws_id: 150454740545
+    profile: t3usa
+    project: tier3
+    regions:
+      - us-east-2
+    images:
+      - app
+      - tunnel
+      - clean
+      - ftp
+
+  pi:
+    aws_id: 475884482681
+    profile: pi_cluster
+    regions:
+      - ca-central-1
+    psql_version: 12
+    requires_name: requirements.txt
+
+  unhaggle:
+    aws_id: 244165182258
+    profile: unhaggle
+    regions:
+      - ca-central-1
+
+  tf_state:
+    aws_id: 0
+    profile: tf_state
+    regions:
+      - us-east-1
+      - ca-central-1
+
+  mi-main:
+    aws_id: 226874278664
+    profile: main
+    regions:
+      - ca-central-1
