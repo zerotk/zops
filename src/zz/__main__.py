@@ -5,7 +5,6 @@ import zz.terraform.cli_commands as tf_commands
 import zz.anatomy.cli_commands as anatomy_commands
 import zz.codegen.cli_commands as codegen_commands
 
-
 @click.group()
 def main():
     pass
@@ -53,12 +52,14 @@ def anatomy():
 
 anatomy.add_command(anatomy_commands.apply)
 
+
 @main.group()
 def codegen():
     pass
 
 codegen.add_command(codegen_commands.codegen_new_apply)
 codegen.add_command(codegen_commands.codegen_apply)
+
 
 if __name__ == '__main__':
     main()

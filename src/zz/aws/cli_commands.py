@@ -12,13 +12,13 @@ import boto3
 import click
 from tabulate import tabulate
 
-from zops.aws.cluster import Cluster
-from zops.aws.ecs import EcsCluster
-from zops.aws.instance import Instance
-from zops.aws.image import Image
-from zops.aws.autoscaling import AutoScalingGroup
-from zops.aws.utils_click import STRING_LIST
-from zops.aws.cli_config import load_config
+from zz.aws.cluster import Cluster
+from zz.aws.ecs import EcsCluster
+from zz.aws.instance import Instance
+from zz.aws.image import Image
+from zz.aws.autoscaling import AutoScalingGroup
+from zz.aws.utils_click import STRING_LIST
+from zz.aws.cli_config import load_config
 
 
 @click.command(name="ami.list")

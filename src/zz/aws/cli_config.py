@@ -4,8 +4,8 @@ import shutil
 
 import yaml
 
-from zops.aws.autoscaling import AutoScalingGroup
-from zops.aws.cluster import Cluster
+from zz.aws.autoscaling import AutoScalingGroup
+from zz.aws.cluster import Cluster
 
 
 def _config_filename(filename, app_name):

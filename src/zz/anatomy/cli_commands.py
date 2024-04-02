@@ -1,6 +1,6 @@
 import os
 from os.path import dirname
-from zerotk.zops import Console
+from zz import Console
 
 import click
 
@@ -17,7 +17,7 @@ def apply(ctx, directories, features_file, templates_dir, playbook_file, recursi
     Apply templates.
     """
     from .layers.playbook import AnatomyPlaybook
-    from zerotk.lib.path import find_up
+    from zz.lib.path import find_up
 
     for i_directory in directories:
         project_name = os.path.basename(os.path.abspath(i_directory))
@@ -53,7 +53,7 @@ def apply(ctx, directories, features_file, templates_dir, playbook_file, recursi
 
 
 def _find_features_file(path):
-    from zerotk.lib.path import find_up
+    from ZZ.lib.path import find_up
 
     SEARCH_FILENAMES = [
         "anatomy-features/anatomy-features.yml",
