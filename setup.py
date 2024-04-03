@@ -29,7 +29,7 @@ setup(
 #    namespace_packages=['zerotk'],
     entry_points={
         'console_scripts': [
-            'zz=zz.__main__:main'
+            'zops=zz.__main__:main'
         ]
     },
 
