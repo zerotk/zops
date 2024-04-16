@@ -12,13 +12,13 @@ import boto3
 import click
 from tabulate import tabulate
 
-from zz.aws.cluster import Cluster
-from zz.aws.ecs import EcsCluster
-from zz.aws.instance import Instance
-from zz.aws.image import Image
-from zz.aws.autoscaling import AutoScalingGroup
-from zz.aws.utils_click import STRING_LIST
-from zz.aws.cli_config import load_config
+from zops.aws.cluster import Cluster
+from zops.aws.ecs import EcsCluster
+from zops.aws.instance import Instance
+from zops.aws.image import Image
+from zops.aws.autoscaling import AutoScalingGroup
+from zops.aws.utils_click import STRING_LIST
+from zops.aws.cli_config import load_config
 
 
 @click.command(name="ami.list")
@@ -67,12 +67,8 @@ def ami_list(clusters, regions, force_regions, sort_by):
     for i_cluster in clusters:
         cluster = Cluster.clusters[i_cluster]
         regions = cluster.regions_arg(regions, force=force_regions)
-        for i_ami in sorted(
-            cluster.list_images(regions=regions), key=attrgetter(sort_by)
-        ):
-            rows.append(
-                [getattr(i_ami, j_name) for j_name, _ in Image._iter_attrs()]
-            )
+        for i_ami in sorted(cluster.list_images(regions=regions), key=attrgetter(sort_by)):
+            rows.append([getattr(i_ami, j_name) for j_name, _ in Image._iter_attrs()])
 
     print(tabulate(rows, headers="firstrow"))
 
@@ -709,7 +705,8 @@ def resources_clean(clusters, region, yes):
         ]
         instances = ec2.instances.filter(Filters=INSTANCES_FILTER)
         for i in instances:
-            name_tag = [j["Value"] for j in i.tags if j["Key"] == "Name"][0]
+            name_tag = [j["Value"] for j in i.tags if j["Key"] == "Name"]
+            name_tag = name_tag[0]
             click.echo(f"  * {i.id}: {name_tag} - {i.state['Name']}")
 
         click.echo("* Volumes:")
@@ -946,3 +943,30 @@ def ecs_deploy(cluster, service, region):
         click.echo(f"* {i_ecs_cluster.name}")
         for i_ecs_service in i_ecs_cluster.list_services():
             click.echo(f"  * {i_ecs_service.name}")
+
+
+@click.command(name="sso.autologin")
+@click.argument("sso_url")
+def sso_autologin(sso_url : str) -> None:
+    """
+    WIP: Automate AWS SSO login using the command line.
+
+    # https://device.sso.ca-central-1.amazonaws.com/?user_code=KRGH-DGNR
+    """
+    click.echo(f"sso.autologin: {soo_url}")
+
+#     from selenium import webdriver
+#
+#     # Initialize Selenium WebDriver (e.g., Chrome)
+#     driver = webdriver.Chrome()
+#
+#     # Navigate to AWS SSO login page
+#     driver.get("https://your-aws-sso-login-url")
+#
+#     # Input SSO token and submit
+#     sso_token = "your-sso-token-here"
+#     driver.find_element_by_id("ssoToken").send_keys(sso_token)
+#     driver.find_element_by_id("signInSubmit").click()
+#
+#     # Continue with your automation tasks
+#     # ...

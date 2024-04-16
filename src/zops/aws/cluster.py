@@ -577,7 +577,10 @@ def list_autoscaling_groups(asg_filter, region="ca-central-1"):
 
             self["ImageId"] = image_id
             image_name = ec2_client.describe_images(ImageIds=[image_id])
-            self["ImageName"] = image_name["Images"][0]["Name"]
+            try:
+                self["ImageName"] = image_name["Images"][0]["Name"]
+            except (IndexError, KeyError):
+                self["ImageName"] = "?"
 
             try:
                 elb_health = {

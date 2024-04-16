@@ -3,13 +3,13 @@
 from setuptools import setup
 
 setup(
-    name='zz',
+    name='zops',
     use_scm_version=True,
 
     author="Alexandre Andrade",
     author_email='kaniabi@gmail.com',
 
-    url='https://github.com/zerotk/zz',
+    url='https://github.com/zerotk/zops',
 
     description="Command line operations.",
     long_description="Command line operations.",
@@ -29,7 +29,8 @@ setup(
 #    namespace_packages=['zerotk'],
     entry_points={
         'console_scripts': [
-            'zops=zz.__main__:main'
+            'zops=zops.__main__:main',
+            'zz=zz.__main__:main',
         ]
     },
 
@@ -39,6 +40,7 @@ setup(
         "boto3",
         "tabulate",
         "pyyaml",
+        "addict",
         # Anatomy
         "ansible",  # Just to use the filter 'combine'.
         "jinja2",

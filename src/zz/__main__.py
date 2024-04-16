@@ -1,64 +1,62 @@
 import click
 
-import zz.aws.cli_commands as aws_commands
-import zz.terraform.cli_commands as tf_commands
-import zz.anatomy.cli_commands as anatomy_commands
-import zz.codegen.cli_commands as codegen_commands
 
 @click.group()
 def main():
     pass
 
+
 @main.group()
 def aws():
     pass
 
-aws.add_command(aws_commands.ami_build)
-aws.add_command(aws_commands.ami_deregister)
-aws.add_command(aws_commands.ami_list)
-aws.add_command(aws_commands.asg_instance_refresh, "asg.instance-refresh")
-aws.add_command(aws_commands.asg_list)
-aws.add_command(aws_commands.asg_update)
-aws.add_command(aws_commands.aws_configure_profile, "configure-profile")
-aws.add_command(aws_commands.deployments_list, "deployments.list")
-aws.add_command(aws_commands.ec2_list)
-aws.add_command(aws_commands.ec2_shell)
-aws.add_command(aws_commands.ec2_start, "ec2.start")
-aws.add_command(aws_commands.ecr_list)
-aws.add_command(aws_commands.ecr_login)
-aws.add_command(aws_commands.ecs_status)
-aws.add_command(aws_commands.params_del)
-aws.add_command(aws_commands.params_get)
-aws.add_command(aws_commands.params_list)
-aws.add_command(aws_commands.params_put)
-aws.add_command(aws_commands.params_set)
-aws.add_command(aws_commands.rds_snapshot_list)
-aws.add_command(aws_commands.resources_clean)
-aws.add_command(aws_commands.resources_clear_default_vps)
-aws.add_command(aws_commands.vpc_details)
-aws.add_command(aws_commands.ecs_deploy)
 
-
-@main.group()
-def tf():
+@aws.command()
+def cloud():
+    """
+    List registered cloud accounts profiles.
+    """
+    click.echo("""
+* mi-stage 123456789000 ca-central-1
+* tier3    150000000000 ca-central-1
+* internal 299378319612 ca-central-1/us-east-2
+* tier1    624664959560 ca-central-1
+""")
     pass
 
-tf.add_command(tf_commands.tf_plan)
 
-
-@main.group()
-def anatomy():
+@aws.command()
+def applications():
+    """
+    List registered AWS profiles.
+    """
+    click.echo("""
+  deployment   aws_profile  newrelic   sentry
+* tier1-dev    mi-dev       518442355  tier1-dev
+* tier1-stage  mi-stage     544578180  moto-stage
+* tier1-prod   tier1        516056459  t1-moto-prod
+""")
     pass
 
-anatomy.add_command(anatomy_commands.apply)
 
-
-@main.group()
-def codegen():
+@aws.command("ec2.list")
+def ec2_list():
     pass
 
-codegen.add_command(codegen_commands.codegen_new_apply)
-codegen.add_command(codegen_commands.codegen_apply)
+
+@aws.command("ec2.shell")
+def ec2_shell():
+    pass
+
+
+@aws.command("ec2.start")
+def ec2_start():
+    pass
+
+
+@aws.command("ec2.stop")
+def ec2_stop():
+    pass
 
 
 if __name__ == '__main__':

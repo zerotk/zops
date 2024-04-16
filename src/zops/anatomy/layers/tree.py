@@ -1,6 +1,6 @@
 import os
 
-from zz.lib.text import dedent
+from zops.lib.text import dedent
 from collections import OrderedDict
 from collections.abc import MutableMapping
 import distutils.util
