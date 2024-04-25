@@ -19,13 +19,17 @@ ACTION_MAP = {
 
 def run_command(cmdline) -> None:
     cmdline = cmdline.split()
-    result = subprocess.run(
-        cmdline,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
-    )
+    try:
+        result = subprocess.run(
+            cmdline,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as e:
+        click.echo(e.stdout)
+        raise SystemExit(9)
     return result
 
 
@@ -38,23 +42,35 @@ def tf_plan(deployment: str, workspace: str, verbose: bool) -> None:
     Pretty output for terraform plan.
     """
     verbose_level = 1 if verbose else 0
-    tfplan_bin = "./.terraform/tfplan.bin"
-    tfplan_json = "./.terraform/tfplan.json"
+    tfplan_bin = f"./.terraform/{deployment}.tfplan.bin"
+    tfplan_json = f"./.terraform/{deployment}.tfplan.json"
     workdir = os.curdir
     var_file = f"tfvars/{deployment}.tfvars"
     if workspace is None:
         workspace = deployment
 
     _print_status(verbose_level, "Initializing terraform")
-    run_command("terraform init")
+    if os.path.isfile("./bin/init"):
+        _print_status(verbose_level, f"* Using ./bin/init")
+        run_command("./bin/init")
+    else:
+        run_command("terraform init")
 
     config = TerraformConfig(workdir)
 
-    _print_status(verbose_level, f"Selecting workspace {workspace}")
-    run_command(f"terraform workspace select {workspace}")
-
     _print_status(verbose_level, f"Generating terraform plan binary file: {tfplan_json}")
-    run_command(f"terraform plan -var-file {var_file} -out {tfplan_bin}")
+    if os.path.isfile("./bin/plan"):
+        _print_status(verbose_level, f"* Using ./bin/plan")
+        cmd_line =f"./bin/plan {deployment} -out {tfplan_bin}"
+    else:
+        _print_status(verbose_level, f"* Selecting workspace {workspace}")
+        run_command(f"terraform workspace select {workspace}")
+
+        cmd_line =f"terraform plan -out {tfplan_bin}"
+        if os.path.isfile(var_file):
+            _print_status(verbose_level, f"* Found terraform variables file: {var_file}")
+            cmd_line += f" -var-file {var_file}"
+    run_command(cmd_line)
 
     _print_status(verbose_level, f"Generating terraform plan json file: {tfplan_json}")
     completed_process = run_command(f"terraform show -json {tfplan_bin}")
