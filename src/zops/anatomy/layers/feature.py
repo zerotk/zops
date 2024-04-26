@@ -45,15 +45,15 @@ class AnatomyFeatureRegistry(object):
 
     @classmethod
     def register_from_file(cls, filename, templates_dir):
-        from zops.lib.yaml import yaml_from_file
+        from zerotk.yaml import yaml_from_file
 
         contents = yaml_from_file(filename)
         return cls.register_from_contents(contents, templates_dir)
 
     @classmethod
     def register_from_text(cls, text):
-        from zops.lib.yaml import yaml_load
-        from zops.lib.text import dedent
+        from zerotk.yaml import yaml_load
+        from zerotk.text import dedent
 
         text = dedent(text)
         contents = yaml_load(text)

@@ -1,6 +1,5 @@
 import os
 
-from zops.lib.text import dedent
 from collections import OrderedDict
 from collections.abc import MutableMapping
 import distutils.util
@@ -216,6 +215,8 @@ class AnatomyFile(object):
     """
 
     def __init__(self, filename, contents, executable=False):
+        from zerotk.text import dedent
+
         self.__filename = filename
         self.__content = dedent(contents)
         self.__executable = executable

@@ -24,9 +24,9 @@ setup(
     ],
 #    keywords='development environment, shell, operations',
 
-#    include_package_data=True,
-#    packages=['zerotk', 'zerotk.zops'],
-#    namespace_packages=['zerotk'],
+    # include_package_data=True,
+    # packages=['zerotk', 'zops'],
+    # namespace_packages=['zerotk'],
     entry_points={
         'console_scripts': [
             'zops=zops.__main__:main',
@@ -45,6 +45,7 @@ setup(
         "ansible",  # Just to use the filter 'combine'.
         "jinja2",
         "stringcase",
+        "ruamel.yaml",
     ],
     setup_requires=['setuptools_scm'],
     tests_require=[
