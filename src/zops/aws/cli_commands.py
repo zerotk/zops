@@ -620,7 +620,7 @@ def params_get(cluster, name, region):
     region = region or cluster.regions[0]
     ssm = cluster.ssm_resource(region)
     r = ssm.get_parameter(Name=name, WithDecryption=True)
-    print(f"{name}={r['Parameter']['Value']}")
+    print("{name}:{Type}={Value}".format(name=name, **r['Parameter']))
 
 
 @click.command(name="params.set")

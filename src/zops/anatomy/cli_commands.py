@@ -10,9 +10,10 @@ import click
 @click.option("--features-file", default=None, envvar="ZOPS_ANATOMY_FEATURES")
 @click.option("--templates-dir", default=None, envvar="ZOPS_ANATOMY_TEMPLATES")
 @click.option("--playbook-file", default=None)
+@click.option("--project-name", default=None)
 @click.option("--recursive", "-r", is_flag=True)
 @click.pass_context
-def apply(ctx, directories, features_file, templates_dir, playbook_file, recursive):
+def apply(ctx, directories, features_file, templates_dir, playbook_file, project_name, recursive):
     """
     Apply templates.
     """
@@ -20,7 +21,7 @@ def apply(ctx, directories, features_file, templates_dir, playbook_file, recursi
     from zerotk.path import find_up
 
     for i_directory in directories:
-        project_name = os.path.basename(os.path.abspath(i_directory))
+        project_name = project_name or os.path.basename(os.path.abspath(i_directory))
         project_playbook_filename = f"anatomy-features/playbooks/{project_name}.yml"
         try:
             project_playbook_filename = find_up(project_playbook_filename, i_directory)
