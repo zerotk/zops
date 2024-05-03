@@ -75,17 +75,6 @@ def codegen_apply(location):
                 _create_file(filename, contents)
 
 
-def _create_file(filename, contents):
-    contents = contents.replace(" \n", "\n")
-    contents = contents.rstrip("\n")
-    contents += "\n"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    try:
-        with open(filename, "w") as oss:
-            oss.write(contents)
-    except Exception as e:
-        raise RuntimeError(e)
-
 
 class TemplateEngine(object):
     """
