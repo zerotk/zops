@@ -36,6 +36,7 @@ setup(
 
     install_requires=[
         'click',
+        'attrs',
         # AWS
         "boto3",
         "tabulate",

@@ -98,25 +98,11 @@ def _find_playbook(directory, project_name):
     import pathlib
     from zerotk.path import find_up
 
-    directory = pathlib.Path(directory).absolute()
-    if project_name is None:
-        project_names = [
-            directory.name,
-            f"{directory.name}-cluster",
-        ]
-    else:
-        project_names = [project_name]
-    project_filenames = [f"anatomy-features/playbooks/{i}.yml" for i in project_names]
-    for i_filename in project_filenames:
-        try:
-            result = find_up(i_filename, directory)
-            return pathlib.Path(result)
-        except FileNotFoundError:
-            continue
+    result = pathlib.Path(directory).absolute() / "anatomy-playbook.yml"
+    if not result.exists():
+        raise RuntimeError(f"FATAL: Can't find playbook: {project_filename}")
 
-    raise RuntimeError(
-        f"FATAL: Can't find playbook:\n{project_filenames}"
-    )
+    return result
 
 
 def _find_features(playbook_filename):

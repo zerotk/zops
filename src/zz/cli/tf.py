@@ -6,13 +6,17 @@ def main():
     pass
 
 
-@main.command()
-def plan():
+@main.command(name="plan")
+@click.argument("deployment")
+@click.option("--verbose", is_flag=True)
+def plan(deployment: str, verbose: bool) -> None:
     """
     Terraform plan with short summary.
     """
-    click.echo("""tf.plan""")
-    pass
+    from zz.terraform.terraform import TerraformPlanner
+
+    planner = TerraformPlanner(verbose=verbose)
+    planner.run(deployment)
 
 
 @main.command()
