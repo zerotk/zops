@@ -65,8 +65,84 @@ def apply_codegen(services, filename):
 
 
 @main.command("apply-anatomy")
-def apply_anatomy():
+@click.argument("directories", nargs=-1)
+@click.option("--features-file", default=None, envvar="ZOPS_ANATOMY_FEATURES")
+@click.option("--templates-dir", default=None, envvar="ZOPS_ANATOMY_TEMPLATES")
+@click.option("--playbook-file", default=None)
+@click.option("--project-name", default=None)
+@click.option("--recursive", "-r", is_flag=True)
+@click.pass_context
+def apply_anatomy(ctx, directories, features_file, templates_dir, playbook_file, project_name, recursive):
     """
     Generate code based on Anatomy templates.
     """
-    pass
+    from zz.anatomy.layers.feature import AnatomyFeatureRegistry
+    from zz.anatomy.layers.playbook import AnatomyPlaybook
+    import os
+    from zz.services.console import Console
+
+    for i_directory in directories:
+        playbook_filename = _find_playbook(i_directory, project_name)
+        Console.info(f"Playbook {playbook_filename}")
+
+        features_filename = _find_features(playbook_filename)
+        templates_dir = templates_dir or features_filename.parent / "templates"
+        Console.info(f"Features {features_filename}")
+
+        AnatomyFeatureRegistry.clear()
+        AnatomyFeatureRegistry.register_from_file(features_filename, templates_dir)
+        AnatomyPlaybook.from_file(playbook_filename).apply(i_directory)
+
+
+def _find_playbook(directory, project_name):
+    import pathlib
+    from zerotk.path import find_up
+
+    directory = pathlib.Path(directory).absolute()
+    if project_name is None:
+        project_names = [
+            directory.name,
+            f"{directory.name}-cluster",
+        ]
+    else:
+        project_names = [project_name]
+    project_filenames = [f"anatomy-features/playbooks/{i}.yml" for i in project_names]
+    for i_filename in project_filenames:
+        try:
+            result = find_up(i_filename, directory)
+            return pathlib.Path(result)
+        except FileNotFoundError:
+            continue
+
+    raise RuntimeError(
+        f"FATAL: Can't find playbook:\n{project_filenames}"
+    )
+
+
+def _find_features(playbook_filename):
+    from zerotk.path import find_up
+    from zz.services.console import Console
+    import pathlib
+
+    SEARCH_FILENAMES = [
+        pathlib.Path("anatomy-features/anatomy-features.yml"),
+        pathlib.Path("anatomy-features.yml"),
+    ]
+
+    for i_filename in SEARCH_FILENAMES:
+        result = find_up(i_filename, playbook_filename.parent)
+        if result is not None:
+            break
+
+    if result is None:
+        Console.error("Can't find features file: anatomy-features.yml.")
+        raise SystemError(1)
+
+    return pathlib.Path(result)
+
+
+def _register_features(filename, templates_dir):
+    from zz.anatomy.layers.feature import AnatomyFeatureRegistry
+
+    AnatomyFeatureRegistry.clear()
+    AnatomyFeatureRegistry.register_from_file(filename, templates_dir)

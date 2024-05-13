@@ -35,7 +35,7 @@ aws_profiles_map:
   intranet: "internal"
   nomad: "internal"
   peb: "tier3"
-  pi: "paymentinsights"
+  pi: "pi"
   qa: "mi-qa"
   sandbox: "mi-sandbox"
   stage: "mi-stage"
