@@ -6,7 +6,9 @@ import zops.anatomy.cli_commands as anatomy_commands
 import zops.codegen.cli_commands as codegen_commands
 
 @click.group()
-def main():
+@click.pass_context
+def main(ctx):
+    ctx.color = True
     pass
 
 @main.group()
