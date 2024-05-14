@@ -16,6 +16,23 @@ ACTION_MAP = {
     "replace": "!",
 }
 
+
+def run_command(cmdline) -> None:
+    cmdline = cmdline.split()
+    try:
+        result = subprocess.run(
+            cmdline,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+    except subprocess.CalledProcessError as e:
+        click.echo(e.stdout)
+        raise SystemExit(9)
+    return result
+
+
 @click.command(name="plan")
 @click.argument("deployment")
 @click.option("--workspace", default=None)

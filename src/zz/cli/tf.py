@@ -8,15 +8,21 @@ def main():
 
 @main.command(name="plan")
 @click.argument("deployment")
+@click.option("--workspace", default=None)
+@click.option("--skip-init", is_flag=True)
+@click.option("--skip-plan", is_flag=True)
 @click.option("--verbose", is_flag=True)
-def plan(deployment: str, verbose: bool) -> None:
+def plan(deployment: str, workspace: str, skip_init: bool, skip_plan: bool, verbose: bool) -> None:
     """
     Terraform plan with short summary.
     """
     from zz.terraform.terraform import TerraformPlanner
+    from zz.services.console import Console
 
-    planner = TerraformPlanner(verbose=verbose)
-    planner.run(deployment)
+    planner = TerraformPlanner(
+        console=Console(verbose_level=1 if verbose else 0),
+    )
+    planner.run(deployment, workspace=workspace, init=not skip_init, plan=not skip_plan)
 
 
 @main.command()

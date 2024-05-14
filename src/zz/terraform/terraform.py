@@ -1,53 +1,70 @@
-from attrs import define
+import attrs
 import pathlib
+from zz.services.filesystem import FileSystem
+from zz.services.console import Console
 
 
-@define
+@attrs.define
 class TerraformPlanner:
 
-    workdir: pathlib.Path = pathlib.Path.cwd()
-    verbose: bool = False
+    workdir:FileSystem.Path = FileSystem.Path.cwd()
+    filesystem: attrs.field = FileSystem.singleton()
+    console: attrs.field = Console.singleton()
 
-    def run(self, deployment:str, workspace:str = None):
-        verbose_level = 1 if self.verbose else 0
-        tfplan_bin = f"./.terraform/{deployment}.tfplan.bin"
-        tfplan_json = f"./.terraform/{deployment}.tfplan.json"
+    ACTION_MAP = {
+        "update": "~",
+        "create": "+",
+        "delete": "-",
+        "replace": "!",
+    }
+
+    def run(self, deployment:str, workspace:str = None, init:bool=True, plan:bool=True):
+        tfplan_bin = self.filesystem.Path(f"./.terraform/{deployment}.tfplan.bin")
+        tfplan_json = self.filesystem.Path(f"./.terraform/{deployment}.tfplan.json")
         var_file = f"tfvars/{deployment}.tfvars"
         if workspace is None:
             workspace = deployment
 
-        self._print_status(verbose_level, "Initializing terraform")
-        if pathlib.Path("./bin/init").exists():
-            self._print_status(verbose_level, f"* Using ./bin/init")
-            self._run_command("./bin/init")
+        self.console.title("Initializing terraform", verbosity=1)
+        if init:
+            if self.filesystem.Path("./bin/init").exists():
+                self.console.item(f"Using ./bin/init", indent=1, verbosity=1)
+                self.filesystem.run("./bin/init")
+            else:
+                self.console.item(f"Using terraform", indent=1, verbosity=1)
+                self.filesystem.run("terraform init")
         else:
-            self._run_command("terraform init")
+            self.console.item(f"Skipping (Use --init option to run init)", indent=1, verbosity=1)
+
 
         config = TerraformConfig(self.workdir)
 
-        self._print_status(verbose_level, f"Generating terraform plan binary file: {tfplan_json}")
-        if os.path.isfile("./bin/plan"):
-            self._print_status(verbose_level, f"* Using ./bin/plan")
-            cmd_line =f"./bin/plan {deployment} -out {tfplan_bin}"
+        self.console.title(f"Generating terraform plan binary file: {tfplan_json}", verbosity=1)
+        if plan:
+            if self.filesystem.Path("./bin/plan").exists():
+                self.console.title(f"* Using ./bin/plan", verbosity=1)
+                cmd_line =f"./bin/plan {deployment} -out {tfplan_bin}"
+            else:
+                self.console.item(f"Selecting workspace {workspace}", indent=1, verbosity=1)
+                self.filesystem.run(f"terraform workspace select {workspace}")
+
+                cmd_line =f"terraform plan -out {tfplan_bin}"
+                if FileSystem.Path(var_file).exists():
+                    self.console.item(f"Found terraform variables file: {var_file}", indent=1, verbosity=1)
+                    cmd_line += f" -var-file {var_file}"
+            self.filesystem.run(cmd_line)
+
+            self.console.title(f"Generating terraform plan json file: {tfplan_json}", verbosity=1)
+            completed_process = self.filesystem.run(f"terraform show -json {tfplan_bin}")
+            tfplan_json.write_text(completed_process.stdout.decode("UTF-8"))
         else:
-            self._print_status(verbose_level, f"* Selecting workspace {workspace}")
-            self._run_command(f"terraform workspace select {workspace}")
+            self.console.item(f"Skipping (Use --plan option to run plan)", indent=1, verbosity=1)
 
-            cmd_line =f"terraform plan -out {tfplan_bin}"
-            if os.path.isfile(var_file):
-                self._print_status(verbose_level, f"* Found terraform variables file: {var_file}")
-                cmd_line += f" -var-file {var_file}"
-        self._run_command(cmd_line)
-
-        self._print_status(verbose_level, f"Generating terraform plan json file: {tfplan_json}")
-        completed_process = self._run_command(f"terraform show -json {tfplan_bin}")
-        open(tfplan_json, "w").write(completed_process.stdout)
-
-        self._print_status(verbose_level, "Reading terraform plan")
-        changes = _read_changes(tfplan_json)
+        self.console.title(f"Reading terraform plan json file: {tfplan_json}", verbosity=1)
+        changes = self.filesystem.read_json(tfplan_json).resource_changes
         output = {}
         for i_change in changes:
-            actions = [ACTION_MAP.get(i, i) for i in i_change.change.actions]
+            actions = [self.ACTION_MAP.get(i, i) for i in i_change.change.actions]
             actions = "/".join(actions)
             if actions in ("no-op", "read"):
                 continue
@@ -55,112 +72,41 @@ class TerraformPlanner:
             filename = config.get_filename(i_change.address)
             output.setdefault(filename, []).append(f"{actions} {i_change.address}")
 
-        self._print_status(verbose_level, "Terraform plan summary:")
+        self.console.title("Terraform plan summary:", verbosity=1)
         for i_filename, i_changes in sorted(output.items()):
-            click.echo(i_filename)
+            self.console.secho(i_filename)
             for j_change in i_changes:
-                format, comment = _get_change_format(i_filename, j_change)
+                format, comment = self._get_change_format(i_filename, j_change)
                 if comment:
                     comment = f"  # {comment}"
-                click.secho(f"  {j_change}{comment}", **format)
+                self.console.secho(f"  {j_change}{comment}", **format)
 
-    def _get_change_format(filename: str, change: str):
+    def _get_change_format(self, filename: str, change: str):
         r_format = dict(fg="white")
         r_comment = ""
-        if "cloudwatch" in change:
-            r_format = dict(fg="green")
-        elif change.startswith("-") or change.startswith("+/-"):
+        if change.startswith("-") or change.startswith("+/-") or change.startswith("-/+"):
             r_format = dict(fg="red")
-        elif change.startswith("+ "):
-            r_format = dict(fg="yellow", bg="green")
+        elif change.startswith("+"):
+            r_format = dict(fg="green")
         return r_format, r_comment
 
 
-    def _load_json(filepath):
-        return json.load(open(filepath), object_hook=AttrDict)
-
-
-    def _read_changes(filename):
-        return _load_json(filename).resource_changes
-
-
-    def _terraform_config_inspect(directory):
-        """
-        Return a map between resources names and their filenames in the given project.
-        """
-        r = subprocess.run(
-            ["terraform-config-inspect", "--json", directory],
-            stderr=subprocess.STDOUT,
-            stdout=subprocess.PIPE,
-        )
-        configs = json.loads(r.stdout.decode("UTF-8"), object_hook=AttrDict)
-
-        if r.returncode != 0:
-            diag = configs.diagnostics[0]
-            if diag.summary == "Failed to read module directory":
-                click.echo(f"WARNING: {diag.summary}: {directory}")
-                return
-            else:
-                raise RuntimeError(
-                    f"""
-Call to terreaform-config-inspect failed with message:
-{diag.summary}
-{diag.detail}
-"""
-                )
-
-        resources_map = {}
-        for i_name, i_details in configs.managed_resources.items():
-            resources_map[i_name] = i_details.pos.filename
-
-        modules_map = {}
-        for i_module_name, i_details in configs.module_calls.items():
-            modules_map[i_module_name] = i_details.pos.filename
-
-        return resources_map, modules_map
-
-    def _print_status(self, verbose_level: int, message: str) -> None:
-        import click
-        if verbose_level > 0:
-            click.echo(click.style(message, fg="blue"))
-
-    def _run_command(self, cmdline) -> None:
-        import subprocess
-
-        cmdline = cmdline.split()
-        try:
-            result = subprocess.run(
-                cmdline,
-                check=True,
-                text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT
-            )
-        except subprocess.CalledProcessError as e:
-            click.echo(e.stdout)
-            raise SystemExit(9)
-        return result
-
-
+@attrs.define
 class TerraformConfig:
     """
     Interface to terraform configuration data.
     """
 
-    def __init__(self, workdir: str):
-        """
-        :param workdir: The root directory for the terraform project.
-        """
-        raw_modules = _load_json(f"{workdir}/.terraform/modules/modules.json")
+    workdir: FileSystem.Path
+    filesystem: attrs.field = FileSystem.singleton()
 
-        self._raw = {}
+    def resources_map(self, module="", prefix="", root_filename=None):
+        modules_filename = self.workdir / ".terraform/modules/modules.json"
+        raw_modules = self.filesystem.read_json(modules_filename)
+        raw = {}
         for i_module in raw_modules.Modules:
-            self._raw[i_module.Key] = _terraform_config_inspect(i_module.Dir)
-
-        self._resources_map = self._get_resources_map("")
-
-    def _get_resources_map(self, module, prefix="", root_filename=None):
-        resources, modules = self._raw.get(module, (None, None))
+            raw[i_module.Key] = self._terraform_config_inspect(i_module.Dir)
+        resources, modules = raw.get(module, (None, None))
 
         if resources is None:
             print(f"ERROR: Cant find raw data about module {module}")
@@ -175,7 +121,7 @@ class TerraformConfig:
                 full_module = i_module
             else:
                 full_module = f"{module}.{i_module}"
-            r = self._get_resources_map(
+            r = self.resources_map(
                 full_module,
                 f"{prefix}module.{i_module}.",
                 root_filename or modules[i_module],
@@ -188,6 +134,41 @@ class TerraformConfig:
         """
         Return the filename associated with the given addr.
         """
+        import re
+
         # Remove everything between brackets
         addr = re.sub(r"\[.*?\]", "", addr)
-        return self._resources_map.get(addr, "?")
+        return self.resources_map().get(addr, "?")
+
+
+    def _terraform_config_inspect(self, directory):
+        """
+        Return a map between resources names and their filenames in the given project.
+        """
+        r = self.filesystem.run(f"terraform-config-inspect --json {directory}")
+        terraform_configuration = r.stdout.decode("UTF-8")
+        terraform_configuration = self.filesystem.read_json_string(terraform_configuration)
+
+        if r.returncode != 0:
+            diag = terraform_configuration.diagnostics[0]
+            if diag.summary == "Failed to read module directory":
+                click.echo(f"WARNING: {diag.summary}: {directory}")
+                return
+            else:
+                raise RuntimeError(
+                    f"""
+Call to terreaform-config-inspect failed with message:
+{diag.summary}
+{diag.detail}
+"""
+                )
+
+        resources_map = {}
+        for i_name, i_details in terraform_configuration.managed_resources.items():
+            resources_map[i_name] = i_details.pos.filename
+
+        modules_map = {}
+        for i_module_name, i_details in terraform_configuration.module_calls.items():
+            modules_map[i_module_name] = i_details.pos.filename
+
+        return resources_map, modules_map

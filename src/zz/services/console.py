@@ -1,34 +1,36 @@
-
-def setenv(name, value):
-    import os
-    os.environ[name] = value
-    Console.setting('{}={}'.format(name, os.environ[name]))
+import functools
 
 
-def add_pythonpath(value):
-    import sys
-    import os
-    value = os.path.normpath(value)
-    sys.path.insert(0, value)
-    Console.setting('SYS.PATH={}'.format(value))
-
-
-def call_main(main_func, *argv):
-    import sys
-    old_argv = sys.argv
-    sys.argv = [''] + list(argv)
-    try:
-        return main_func()
-    except SystemExit as e:
-        return e.code
-    finally:
-        sys.argv = old_argv
-
-
-def ensure_dir(path):
-    import os
-    os.makedirs(path, exist_ok=True)
-    Console.setting('DIRECTORY: {}'.format(path))
+# def setenv(name, value):
+#     import os
+#     os.environ[name] = value
+#     Console.setting('{}={}'.format(name, os.environ[name]))
+#
+#
+# def add_pythonpath(value):
+#     import sys
+#     import os
+#     value = os.path.normpath(value)
+#     sys.path.insert(0, value)
+#     Console.setting('SYS.PATH={}'.format(value))
+#
+#
+# def call_main(main_func, *argv):
+#     import sys
+#     old_argv = sys.argv
+#     sys.argv = [''] + list(argv)
+#     try:
+#         return main_func()
+#     except SystemExit as e:
+#         return e.code
+#     finally:
+#         sys.argv = old_argv
+#
+#
+# def ensure_dir(path):
+#     import os
+#     os.makedirs(path, exist_ok=True)
+#     Console.setting('DIRECTORY: {}'.format(path))
 
 
 class Console(object):
@@ -40,46 +42,58 @@ class Console(object):
     INFO_COLOR = 'white'
     DEBUG_COLOR = 'red'
 
-    @classmethod
-    def title(cls, *args):
-        cls._secho(['#'] + list(args), cls.TITLE_COLOR)
+    SEPARATOR_CHAR = " "
+    INDENTATION_TEXT = "  "
+
+    ITEM_PREFIX = "*"
+    TITLE_PREFIX = "#"
+    DEBUG_PREFIX = "***"
+    INFO_PREFIX = "\U0001F6C8"
 
     @classmethod
-    def execution(cls, *args):
-        cls._secho(['$'] + list(args), cls.EXECUTION_COLOR)
+    @functools.cache
+    def singleton(cls) -> "Console":
+        return cls()
 
-    @classmethod
-    def setting(cls, *args):
-        cls._secho(['!'] + list(args), cls.SETTING_COLOR)
+    def __init__(self, verbose_level:int=0):
+        self._verbose_level = verbose_level
 
-    @classmethod
-    def item(cls, *args, ident=0):
-        prefix = cls._idented('*', ident)
-        cls._secho([prefix] + list(args), cls.OUTPUT_COLOR)
+    def title(self, message:str, title_level:int=1, verbosity:int=0):
+        prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=0)
+        self.secho(prefix + message, fg=self.TITLE_COLOR, verbosity=verbosity)
 
-    @classmethod
-    def output(cls, *args):
-        cls._secho(args, cls.OUTPUT_COLOR)
+#     def execution(self, message, verbose=0):
+#         self._secho(['$'] + [message], self.EXECUTION_COLOR)
+#
+#     def setting(self, message, verbose=0):
+#         self._secho(['!'] + list(args), self.SETTING_COLOR)
 
-    @classmethod
-    def response(cls, *args):
-        cls._secho(['>'] + list(args), cls.OUTPUT_COLOR)
+    def item(self, message:str, indent:int=0, fg=OUTPUT_COLOR, verbosity:int=0):
+        prefix = self._prefix(self.ITEM_PREFIX, indent=indent)
+        self.secho(prefix + message, fg=fg, verbosity=verbosity)
 
-    @classmethod
-    def info(cls, *args):
-        cls._secho(['\U0001F6C8'] + list(args), cls.INFO_COLOR)
+#     def output(self, *args):
+#         self._secho(args, self.OUTPUT_COLOR)
+#
+#     def response(self, *args):
+#         self._secho(['>'] + list(args), self.OUTPUT_COLOR)
 
-    @classmethod
-    def debug(cls, *args):
-        cls._secho(['***'] + list(args), cls.DEBUG_COLOR)
+    def info(self, message:str, indent:int=0, verbosity:int=0):
+        prefix = self._prefix(self.INFO_PREFIX, indent=indent)
+        self.secho(message, self.INFO_COLOR)
 
-    @classmethod
-    def _idented(cls, text, ident):
-        return '  ' * ident + text
+    def debug(self, message:str, indent:int=0, verbosity:int=0):
+        prefix = self._prefix(self.DEBUG_PREFIX, indent=indent)
+        self.secho(prefix + message, fg=self.DEBUG_COLOR, verbosity=verbosity)
 
-    @classmethod
-    def _secho(cls, args, fg, join_char=' '):
-        import click
-        message = join_char.join(args)
+    def _prefix(self, prefix:str, indent:int=0, separator:str=SEPARATOR_CHAR) -> str:
+        return self.INDENTATION_TEXT * indent + prefix + separator
+
+    def secho(self, message:str, fg=OUTPUT_COLOR, verbosity:int=0) -> None:
+        if self._verbose_level < verbosity:
+            return
+
         message.rstrip('\n')
+
+        import click
         click.secho(message, fg=fg)

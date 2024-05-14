@@ -81,13 +81,15 @@ def apply_anatomy(ctx, directories, features_file, templates_dir, playbook_file,
     import os
     from zz.services.console import Console
 
+    console = Console.singleton()
+
     for i_directory in directories:
         playbook_filename = _find_playbook(i_directory, project_name)
-        Console.info(f"Playbook {playbook_filename}")
+        console.info(f"Playbook {playbook_filename}")
 
         features_filename = _find_features(playbook_filename)
         templates_dir = templates_dir or features_filename.parent / "templates"
-        Console.info(f"Features {features_filename}")
+        console.info(f"Features {features_filename}")
 
         AnatomyFeatureRegistry.clear()
         AnatomyFeatureRegistry.register_from_file(features_filename, templates_dir)
@@ -100,7 +102,7 @@ def _find_playbook(directory, project_name):
 
     result = pathlib.Path(directory).absolute() / "anatomy-playbook.yml"
     if not result.exists():
-        raise RuntimeError(f"FATAL: Can't find playbook: {project_filename}")
+        raise click.FileError(result, "Can't find anatomy-playbook file.")
 
     return result
 
