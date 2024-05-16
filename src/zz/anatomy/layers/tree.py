@@ -1,8 +1,7 @@
+import distutils.util
 import os
-
 from collections import OrderedDict
 from collections.abc import MutableMapping
-import distutils.util
 
 
 class UndefinedVariableInTemplate(KeyError):
@@ -23,7 +22,9 @@ class TemplateEngine(object):
         return cls.__singleton
 
     def expand(self, text, variables, alt_expansion=False):
-        from jinja2 import Environment, Template, StrictUndefined
+        from jinja2 import Environment
+        from jinja2 import StrictUndefined
+        from jinja2 import Template
 
         if alt_expansion:
             kwargs = dict(
@@ -40,7 +41,7 @@ class TemplateEngine(object):
             lstrip_blocks=True,
             keep_trailing_newline=True,
             undefined=StrictUndefined,
-            **kwargs
+            **kwargs,
         )
 
         def is_empty(text_):
@@ -246,7 +247,9 @@ class AnatomyFile(object):
 
         # Use alternative variable/block expansion when working with Ansible
         # file.
-        alt_expansion = filename.endswith("ansible.yml") or ".github/workflows" in filename
+        alt_expansion = (
+            filename.endswith("ansible.yml") or ".github/workflows" in filename
+        )
 
         try:
             content = expand(self.__content, variables, alt_expansion)
@@ -454,5 +457,5 @@ def _merge_dict(d1, d2, depth=0, left_join=True):
             )
         except AssertionError as e:
             print("While merging value for key {}".format(i_key))
-            raise
+            raise e
     return result

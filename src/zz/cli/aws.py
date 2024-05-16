@@ -11,13 +11,20 @@ def cloud():
     """
     List registered cloud accounts profiles.
     """
-    click.echo("""
-* mi-stage 123456789000 ca-central-1
-* tier3    150000000000 ca-central-1
-* internal 299378319612 ca-central-1/us-east-2
-* tier1    624664959560 ca-central-1
-""")
-    pass
+    # from zz.services.aws_provider import AwsProvider
+    import boto3
+    import botocore
+
+    for i, i_profile in enumerate(boto3.session.Session().available_profiles):
+        try:
+            s = boto3.session.Session(profile_name=i_profile)
+            identity = s.client("sts").get_caller_identity()
+            account_id = identity["Account"]
+        except botocore.exceptions.NoCredentialsError:
+            account_id = "?"
+        print(i_profile, account_id)
+        if i > 3:
+            break
 
 
 @main.command("d")
@@ -25,12 +32,14 @@ def deployments():
     """
     List registered deployments.
     """
-    click.echo("""
+    click.echo(
+        """
   deployment   aws_profile  newrelic   sentry
 * tier1-dev    mi-dev       518442355  tier1-dev
 * tier1-stage  mi-stage     544578180  moto-stage
 * tier1-prod   tier1        516056459  t1-moto-prod
-""")
+"""
+    )
     pass
 
 

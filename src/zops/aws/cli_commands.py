@@ -4,7 +4,8 @@ import os
 import re
 import sys
 import time
-from operator import attrgetter, itemgetter
+from operator import attrgetter
+from operator import itemgetter
 from pathlib import Path
 
 import addict
@@ -12,13 +13,13 @@ import boto3
 import click
 from tabulate import tabulate
 
+from zops.aws.autoscaling import AutoScalingGroup
+from zops.aws.cli_config import load_config
 from zops.aws.cluster import Cluster
 from zops.aws.ecs import EcsCluster
-from zops.aws.instance import Instance
 from zops.aws.image import Image
-from zops.aws.autoscaling import AutoScalingGroup
+from zops.aws.instance import Instance
 from zops.aws.utils_click import STRING_LIST
-from zops.aws.cli_config import load_config
 
 
 @click.command(name="ami.list")
@@ -67,7 +68,9 @@ def ami_list(clusters, regions, force_regions, sort_by):
     for i_cluster in clusters:
         cluster = Cluster.clusters[i_cluster]
         regions = cluster.regions_arg(regions, force=force_regions)
-        for i_ami in sorted(cluster.list_images(regions=regions), key=attrgetter(sort_by)):
+        for i_ami in sorted(
+            cluster.list_images(regions=regions), key=attrgetter(sort_by)
+        ):
             rows.append([getattr(i_ami, j_name) for j_name, _ in Image._iter_attrs()])
 
     print(tabulate(rows, headers="firstrow"))
@@ -115,7 +118,8 @@ aws_secret_access_key={access_secret}
 region = {region}"""
         )
         if role_arn:
-            oss.write(f"""
+            oss.write(
+                f"""
 role_arn={role_arn}
 """
             )
@@ -242,9 +246,7 @@ def ami_build(
 
     cluster_names = set(cluster_names)
     clusters = [Cluster.clusters[i] for i in cluster_names]
-    ami_regions = {
-        i.regions[0] for i in clusters if i.regions[0] != cluster.regions[0]
-    }
+    ami_regions = {i.regions[0] for i in clusters if i.regions[0] != cluster.regions[0]}
     ami_users = {str(i.aws_id) for i in clusters}
     base_ami_version = base_ami_version or version
 
@@ -277,9 +279,7 @@ def ami_build(
         """
         result = []
         for i_image_name, i_region in itertools.product(image_names, regions):
-            image = cluster.get_image(
-                i_image_name, version, i_region, image_os
-            )
+            image = cluster.get_image(i_image_name, version, i_region, image_os)
             if image.exists:
                 if overwrite:
                     image.msg("WARN: Image already exists: Overwriting.")
@@ -306,8 +306,7 @@ def ami_build(
         )
         if not r:
             print(
-                "ERROR: Error while building image. "
-                "Check the logs for more details."
+                "ERROR: Error while building image. " "Check the logs for more details."
             )
             sys.exit(1)
 
@@ -340,9 +339,7 @@ def deployments_list(clusters, revision_width):
         deploys += cluster.list_deploy(revision_width=revision_width)
 
     rows = [keys]
-    rows += [
-        [i[j] for j in keys] for i in sorted(deploys, key=itemgetter(sort_by))
-    ]
+    rows += [[i[j] for j in keys] for i in sorted(deploys, key=itemgetter(sort_by))]
     print(tabulate(rows, headers="firstrow"))
 
 
@@ -365,9 +362,7 @@ def ec2_list(sort_by, volumes, keys, clusters):
     for i_cluster in clusters:
         cluster = Cluster.clusters[i_cluster]
         for i_region in cluster.regions:
-            for j_instance in cluster.list_instances(
-                i_region, sort_by=sort_by
-            ):
+            for j_instance in cluster.list_instances(i_region, sort_by=sort_by):
                 rows.append(j_instance.as_row(keys))
     print(tabulate(rows, headers="firstrow"))
 
@@ -394,6 +389,7 @@ def ec2_start(instance_names):
         ):
             print(f"{j_instance}: Starting instance.")
             j_instance.start()
+
 
 @click.command(name="ec2.shell")
 @click.argument("instance_seed")
@@ -422,9 +418,7 @@ def ec2_shell(instance_seed, index, profile, region, command, sleep):
         else:
             region = cluster.regions[0]
         print(f"AWS region: {region}")
-        instances = cluster.get_instance_by_name(
-            instance_name, state="running"
-        )
+        instances = cluster.get_instance_by_name(instance_name, state="running")
         if not instances:
             print(
                 f"""
@@ -457,9 +451,7 @@ Check if your AWS credentials work with:
                 break
         print(output["StandardOutputContent"])
     else:
-        cmd = (
-            f"aws --profile={profile} ssm start-session --target {instance_id}"
-        )
+        cmd = f"aws --profile={profile} ssm start-session --target {instance_id}"
         print(f"Command line: {cmd}")
         os.system(cmd)  # nosec B605
         print(f"{instance_id}: Finished SSM session.")
@@ -536,9 +528,7 @@ def params_list(cluster, prefix):
     result = {}
     for i_region in cluster.regions:
         ssm = cluster.ssm_client(i_region)
-        parameters_pages = ssm.get_paginator(
-            "get_parameters_by_path"
-        ).paginate(
+        parameters_pages = ssm.get_paginator("get_parameters_by_path").paginate(
             Path=prefix,
             Recursive=True,
             WithDecryption=True,
@@ -588,9 +578,7 @@ def params_put(cluster, filename, region):
         # print(f"DEL  {i_name}:{i_type}={value}")
         # print(f"NEW  {i_name}:{i_type}={value}")
         print(f"SET  {i_name}:{i_type}={value}")
-        ssm.put_parameter(
-            Name=i_name, Value=i_value, Type=i_type, Overwrite=True
-        )
+        ssm.put_parameter(Name=i_name, Value=i_value, Type=i_type, Overwrite=True)
 
 
 def split_name_value(name_value):
@@ -620,7 +608,7 @@ def params_get(cluster, name, region):
     region = region or cluster.regions[0]
     ssm = cluster.ssm_resource(region)
     r = ssm.get_parameter(Name=name, WithDecryption=True)
-    print("{name}:{Type}={Value}".format(name=name, **r['Parameter']))
+    print("{name}:{Type}={Value}".format(name=name, **r["Parameter"]))
 
 
 @click.command(name="params.set")
@@ -640,9 +628,7 @@ def params_set(cluster, name_values, region, overwrite):
     ssm = cluster.ssm_resource(region)
     for i_name_value in name_values:
         name, value_type, value = split_name_value(i_name_value)
-        ssm.put_parameter(
-            Name=name, Value=value, Type=value_type, Overwrite=overwrite
-        )
+        ssm.put_parameter(Name=name, Value=value, Type=value_type, Overwrite=overwrite)
 
 
 @click.command(name="params.del")
@@ -685,9 +671,7 @@ def resources_clean(clusters, region, yes):
         click.echo("Resources cleanup")
 
         click.echo("* Security Groups:")
-        security_groups = ec2.security_groups.filter(
-            Filters=SECURITY_GROUP_FILTER
-        )
+        security_groups = ec2.security_groups.filter(Filters=SECURITY_GROUP_FILTER)
         for i in security_groups:
             click.echo(f"  * {i.group_id}: {i.group_name} - {i.description}")
 
@@ -710,11 +694,8 @@ def resources_clean(clusters, region, yes):
             click.echo(f"  * {i.id}: {name_tag} - {i.state['Name']}")
 
         click.echo("* Volumes:")
-        volumes_filter = {
-            'Name': 'status',
-            'Values': ['available']
-        }
-        volumes = ec2_client.describe_volumes(Filters=[volumes_filter])['Volumes']
+        volumes_filter = {"Name": "status", "Values": ["available"]}
+        volumes = ec2_client.describe_volumes(Filters=[volumes_filter])["Volumes"]
         for i in volumes:
             i = addict.Dict(i)
             click.echo(f"  * {i.VolumeId} - {i.State}")
@@ -724,7 +705,9 @@ def resources_clean(clusters, region, yes):
         images_snapshots = {}
         for i_image in images:
             for j_block_device in i_image["BlockDeviceMappings"]:
-                images_snapshots[j_block_device["Ebs"]["SnapshotId"]] = i_image["ImageId"]
+                images_snapshots[j_block_device["Ebs"]["SnapshotId"]] = i_image[
+                    "ImageId"
+                ]
 
         snapshots = ec2_client.describe_snapshots(OwnerIds=["self"])["Snapshots"]
         snapshots_to_delete = []
@@ -761,20 +744,17 @@ def resources_clean(clusters, region, yes):
                     click.echo(f"*** Failed to delete snapshot {i}")
                     continue
 
+
 @click.command(name="resources.clear_default_vpcs")
 @click.argument("cluster")
 @click.option("--regions", multiple=True, default=[])
-@click.option(
-    "--skip-regions", multiple=True, default=["ca-central-1", "us-east-2"]
-)
+@click.option("--skip-regions", multiple=True, default=["ca-central-1", "us-east-2"])
 @click.option("--yes", is_flag=True)
 def resources_clear_default_vps(cluster, regions, skip_regions, yes):
     load_config()
     cluster = Cluster.get_cluster(cluster)
     client = cluster.ec2()
-    regions = regions or [
-        i["RegionName"] for i in client.describe_regions()["Regions"]
-    ]
+    regions = regions or [i["RegionName"] for i in client.describe_regions()["Regions"]]
     regions = [i for i in regions if i not in skip_regions]
     print(f"Regions: {regions}")
     for i_region in regions:
@@ -806,10 +786,7 @@ def _delete_vpc(vpc, yes):
         if yes:
             sub.delete()
     for rtb in vpc.route_tables.all():
-        if (
-            rtb.associations_attribute
-            and rtb.associations_attribute[0]["Main"]
-        ):
+        if rtb.associations_attribute and rtb.associations_attribute[0]["Main"]:
             print(f"  * Skip main route-table: {rtb.id}")
             continue
         print(f"* Removing route-table {rtb.id}")
@@ -849,7 +826,10 @@ def ecr_list(repos, cluster, region):
                 if images_tags:
                     print(
                         "* {registryId}.dkr.ecr.{region}.amazonaws.com/{repositoryName}:{images_tags} ({image_size}Mb) - {imagePushedAt} ".format(
-                            images_tags=images_tags, image_size=image_size, region=region, **i
+                            images_tags=images_tags,
+                            image_size=image_size,
+                            region=region,
+                            **i,
                         )
                     )
     else:
@@ -866,7 +846,9 @@ def ecr_login(cluster, region):
     cluster = Cluster.get_cluster(cluster)
     region = region or cluster.regions[0]
 
-    click.echo(f"aws ecr --profile=mi-shared get-login-password --region {region} | docker login --username AWS --password-stdin {cluster.aws_id}.dkr.ecr.{region}.amazonaws.com")
+    click.echo(
+        f"aws ecr --profile=mi-shared get-login-password --region {region} | docker login --username AWS --password-stdin {cluster.aws_id}.dkr.ecr.{region}.amazonaws.com"
+    )
 
 
 @click.command(name="rds_snapshot.list")
@@ -878,9 +860,7 @@ def rds_snapshot_list(cluster, region):
     region = region or cluster.regions[0]
 
     rds = cluster.client("rds", region=region)
-    snapshots = rds.describe_db_snapshots(SnapshotType="automated")[
-        "DBSnapshots"
-    ]
+    snapshots = rds.describe_db_snapshots(SnapshotType="automated")["DBSnapshots"]
     for i in snapshots:
         print("*", i)
 
@@ -905,7 +885,9 @@ def vpc_details(cluster, region):
         # result["private_route_table_ids"] = {}
         # result["azs"] = {}
         result["public_subnets"] = [j.id for j in subnets if j.map_public_ip_on_launch]
-        result["private_subnets"] = [j.id for j in subnets if not j.map_public_ip_on_launch]
+        result["private_subnets"] = [
+            j.id for j in subnets if not j.map_public_ip_on_launch
+        ]
         result["private_route_table_ids"] = [
             j.id
             for j in i_vpc.route_tables.all()
@@ -947,13 +929,14 @@ def ecs_deploy(cluster, service, region):
 
 @click.command(name="sso.autologin")
 @click.argument("sso_url")
-def sso_autologin(sso_url : str) -> None:
+def sso_autologin(sso_url: str) -> None:
     """
     WIP: Automate AWS SSO login using the command line.
 
     # https://device.sso.ca-central-1.amazonaws.com/?user_code=KRGH-DGNR
     """
     click.echo(f"sso.autologin: {soo_url}")
+
 
 #     from selenium import webdriver
 #

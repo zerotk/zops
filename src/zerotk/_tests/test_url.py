@@ -37,8 +37,9 @@ import pytest
     ],
 )
 def test_urlconcat(parts, expected, urljoin_expected):
-    from zerotk.lib.url import urlconcat
     from urllib.parse import urljoin
+
+    from zerotk.lib.url import urlconcat
 
     assert urlconcat(*parts) == expected
     assert urljoin(*parts) == urljoin_expected

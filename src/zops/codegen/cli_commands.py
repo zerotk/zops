@@ -22,16 +22,15 @@ def codegen_new_apply(location):
     datasets = spec["zops.codegen"]["datasets"]
 
     for i_template in templates:
-        dataset_index = i_template.get('dataset', "")
-        filenames = i_template['filenames']
+        dataset_index = i_template.get("dataset", "")
+        filenames = i_template["filenames"]
         for j_name, j_values in _get_dataset_items(datasets, dataset_index):
             click.echo(f"{dataset_index}::{j_name}")
             for k_filename in filenames:
                 filename = k_filename.replace("__name__", j_name)
                 click.echo(f"  * {filename}")
                 contents = template_engine.expand(
-                    open(f"{template_dir}/{k_filename}", "r").read(),
-                    j_values
+                    open(f"{template_dir}/{k_filename}", "r").read(), j_values
                 )
                 _create_file(filename, contents)
 
@@ -69,11 +68,9 @@ def codegen_apply(location):
                 filename = k_template.replace("__name__", j_config_name)
                 click.echo(f"  * {filename}")
                 contents = template_engine.expand(
-                    open(f"{template_dir}/{k_template}", "r").read(),
-                    j_config_data
+                    open(f"{template_dir}/{k_template}", "r").read(), j_config_data
                 )
                 _create_file(filename, contents)
-
 
 
 class TemplateEngine(object):
@@ -90,7 +87,9 @@ class TemplateEngine(object):
         return cls.__singleton
 
     def expand(self, text, variables, alt_expansion=False):
-        from jinja2 import Environment, Template, StrictUndefined
+        from jinja2 import Environment
+        from jinja2 import StrictUndefined
+        from jinja2 import Template
 
         if alt_expansion:
             kwargs = dict(
@@ -107,7 +106,7 @@ class TemplateEngine(object):
             # lstrip_blocks=True,
             keep_trailing_newline=True,
             undefined=StrictUndefined,
-            **kwargs
+            **kwargs,
         )
 
         def is_empty(text_):

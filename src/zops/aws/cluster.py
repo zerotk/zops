@@ -9,10 +9,11 @@ import boto3
 import click
 import yaml
 
-from .utils import get_resource_attr, format_date
-from .utils_shell import packer
 from .image import Image
 from .instance import Instance
+from .utils import format_date
+from .utils import get_resource_attr
+from .utils_shell import packer
 
 
 class Cluster:
@@ -147,9 +148,7 @@ class Cluster:
 
         workspace = name_parts.pop(-1) if name_parts else cls.terraform_workspace()
         project = cls.clusters_arg([name_parts.pop(-1)] if name_parts else [])[0]
-        cluster = cls.CLUSTER_MAP.get(
-            workspace, cls.CLUSTER_MAP.get(project, project)
-        )
+        cluster = cls.CLUSTER_MAP.get(workspace, cls.CLUSTER_MAP.get(project, project))
         cluster = cls.clusters[cluster]
         project = cls.PROJECT_MAP.get(project, project)
         return cluster, f"{project}-{workspace}-{role}{suffix}"
@@ -266,12 +265,8 @@ class Cluster:
         result = []
         regions = regions or self.regions
         for i_region in regions:
-            for i in self.ec2_resource(i_region).images.filter(
-                Owners=self.AWS_OWNERS
-            ):
-                image = Image.from_aws_ami(
-                    i, region=i_region, profile=self.profile
-                )
+            for i in self.ec2_resource(i_region).images.filter(Owners=self.AWS_OWNERS):
+                image = Image.from_aws_ami(i, region=i_region, profile=self.profile)
                 result.append(image)
         return result
 
@@ -476,15 +471,11 @@ class Cluster:
     def list_deploy(self, revision_width=80):
         result = []
         for i_region in self.regions:
-            apps = (
-                self.codedeploy(i_region)
-                .list_applications()
-                .get("applications", [])
-            )
+            apps = self.codedeploy(i_region).list_applications().get("applications", [])
             for j_app in apps:
-                deployment_groups = self.codedeploy(
-                    i_region
-                ).list_deployment_groups(applicationName=j_app)
+                deployment_groups = self.codedeploy(i_region).list_deployment_groups(
+                    applicationName=j_app
+                )
                 for k_group in deployment_groups.get("deploymentGroups", []):
                     deployment_group_info = (
                         self.codedeploy(i_region)
@@ -506,9 +497,7 @@ class Cluster:
                     deployment_info = deployment["deploymentInfo"]
 
                     try:
-                        revision = deployment_info["revision"]["s3Location"][
-                            "key"
-                        ]
+                        revision = deployment_info["revision"]["s3Location"]["key"]
                         revision = revision[:revision_width] + "..."
                     except KeyError:
                         revision = "UNKNOWN"
@@ -520,12 +509,8 @@ class Cluster:
                             app=j_app,
                             group=k_group,
                             status=deployment_info["status"],
-                            create_time=format_date(
-                                deployment_info["createTime"]
-                            ),
-                            end_time=format_date(
-                                deployment_info.get("endTime", "")
-                            ),
+                            create_time=format_date(deployment_info["createTime"]),
+                            end_time=format_date(deployment_info.get("endTime", "")),
                             revision=revision,
                         )
                     )
@@ -549,31 +534,25 @@ def list_autoscaling_groups(asg_filter, region="ca-central-1"):
             ec2_client = session.client("ec2")
 
             if "LaunchConfigurationName" in self:
-                launch_configurations = (
-                    autoscaling.describe_launch_configurations(
-                        LaunchConfigurationNames=[
-                            self["LaunchConfigurationName"]
-                        ]
-                    )["LaunchConfigurations"]
-                )
+                launch_configurations = autoscaling.describe_launch_configurations(
+                    LaunchConfigurationNames=[self["LaunchConfigurationName"]]
+                )["LaunchConfigurations"]
                 image_id = launch_configurations[0]["ImageId"]
             else:
                 launch_template_id = self["LaunchTemplate"]["LaunchTemplateId"]
                 launch_template = ec2_client.describe_launch_templates(
                     LaunchTemplateIds=[launch_template_id]
                 )
-                launch_template_version = launch_template["LaunchTemplates"][
-                    0
-                ]["LatestVersionNumber"]
-                launch_template_version = (
-                    ec2_client.describe_launch_template_versions(
-                        LaunchTemplateId=launch_template_id,
-                        Versions=[str(launch_template_version)],
-                    )
+                launch_template_version = launch_template["LaunchTemplates"][0][
+                    "LatestVersionNumber"
+                ]
+                launch_template_version = ec2_client.describe_launch_template_versions(
+                    LaunchTemplateId=launch_template_id,
+                    Versions=[str(launch_template_version)],
                 )
-                image_id = launch_template_version["LaunchTemplateVersions"][
-                    0
-                ]["LaunchTemplateData"]["ImageId"]
+                image_id = launch_template_version["LaunchTemplateVersions"][0][
+                    "LaunchTemplateData"
+                ]["ImageId"]
 
             self["ImageId"] = image_id
             image_name = ec2_client.describe_images(ImageIds=[image_id])
@@ -600,18 +579,14 @@ def list_autoscaling_groups(asg_filter, region="ca-central-1"):
                 }
                 for j_instance in self["Instances"]:
                     instance_id = j_instance["InstanceId"]
-                    j_instance["ec2.ImageId"] = ec2_instances[
-                        instance_id
-                    ].image_id
+                    j_instance["ec2.ImageId"] = ec2_instances[instance_id].image_id
                     j_instance["ec2.State"] = get_resource_attr(
                         ec2_instances[instance_id], "state:Name"
                     )
                     j_instance["image.name"] = get_resource_attr(
                         ec2_instances[instance_id], "image.name"
                     )
-                    j_instance["elb.HealthStatus"] = elb_health.get(
-                        instance_id, "?"
-                    )
+                    j_instance["elb.HealthStatus"] = elb_health.get(instance_id, "?")
 
             instance_refreshes = autoscaling.describe_instance_refreshes(
                 AutoScalingGroupName=asg_name
@@ -679,9 +654,7 @@ def list_autoscaling_groups(asg_filter, region="ca-central-1"):
         result.append(autoscaling_group)
 
     if not result:
-        print(
-            f"WARNING: No autoscaling group matches the given name: {asg_filter}"
-        )
+        print(f"WARNING: No autoscaling group matches the given name: {asg_filter}")
 
     return result
 
@@ -703,9 +676,7 @@ def handle_instance_refreshes(asg):
             # Ignore successful instance refreshes.
             pass
         else:
-            raise RuntimeError(
-                f"Instance refresh in an unkonwn state: {j_refresh}"
-            )
+            raise RuntimeError(f"Instance refresh in an unkonwn state: {j_refresh}")
     return result
 
 

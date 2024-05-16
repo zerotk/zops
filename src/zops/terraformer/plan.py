@@ -2,11 +2,14 @@ import json
 import shutil
 from copy import deepcopy
 from logging import getLogger
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 
-from .exceptions import TerraformRuntimeError, TerraformVersionError
+from .exceptions import TerraformRuntimeError
+from .exceptions import TerraformVersionError
 from .mixins import TerraformRun
 from .settings import settings
+
 
 logger = getLogger(__name__)
 

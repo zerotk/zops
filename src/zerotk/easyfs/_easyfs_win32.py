@@ -1,5 +1,6 @@
 import ctypes
 
+
 DeleteFile = ctypes.windll.kernel32.DeleteFileW
 DeleteFile.argtypes = [ctypes.c_wchar_p]
 DeleteFile.restype = ctypes.wintypes.HANDLE

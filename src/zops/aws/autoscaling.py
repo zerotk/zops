@@ -22,15 +22,11 @@ class AutoScalingGroup:
 
         profile_name = asg_seed.split("-")
         profile_name = cls.PROFILE_MAP.get(
-            profile_name[1],
-            cls.PROFILE_MAP.get(profile_name[0], profile_name[0])
+            profile_name[1], cls.PROFILE_MAP.get(profile_name[0], profile_name[0])
         )
         print(f"AWS_PROFILE={profile_name}")
         print(f"AWS_REGION={region}")
-        session = boto3.Session(
-            profile_name=profile_name,
-            region_name=region
-        )
+        session = boto3.Session(profile_name=profile_name, region_name=region)
         autoscaling = session.client("autoscaling")
 
         result = []
@@ -43,9 +39,7 @@ class AutoScalingGroup:
             result.append(autoscaling_group)
 
         if not result:
-            print(
-                f"WARNING: No autoscaling group matches the given name: {asg_seed}"
-            )
+            print(f"WARNING: No autoscaling group matches the given name: {asg_seed}")
 
         return result
 
@@ -84,18 +78,14 @@ class AutoScalingGroup:
             }
             for j_instance in self._instances:
                 instance_id = j_instance["InstanceId"]
-                j_instance["ec2.ImageId"] = ec2_instances[
-                    instance_id
-                ].image_id
+                j_instance["ec2.ImageId"] = ec2_instances[instance_id].image_id
                 j_instance["ec2.State"] = get_resource_attr(
                     ec2_instances[instance_id], "state:Name"
                 )
                 j_instance["image.name"] = get_resource_attr(
                     ec2_instances[instance_id], "image.name"
                 )
-                j_instance["elb.HealthStatus"] = elb_health.get(
-                    instance_id, "?"
-                )
+                j_instance["elb.HealthStatus"] = elb_health.get(instance_id, "?")
 
         instance_refreshes = autoscaling_client.describe_instance_refreshes(
             AutoScalingGroupName=self.name
@@ -134,28 +124,25 @@ class AutoScalingGroup:
         ec2_client = session.client("ec2")
 
         if "LaunchConfigurationName" in asg_dict:
-            launch_configurations = (
-                autoscaling_client.describe_launch_configurations(
-                    LaunchConfigurationNames=[
-                        asg_dict["LaunchConfigurationName"]
-                    ]
-                )["LaunchConfigurations"]
-            )
+            launch_configurations = autoscaling_client.describe_launch_configurations(
+                LaunchConfigurationNames=[asg_dict["LaunchConfigurationName"]]
+            )["LaunchConfigurations"]
             return launch_configurations[0]["ImageId"]
         else:
             launch_template_id = asg_dict["LaunchTemplate"]["LaunchTemplateId"]
             launch_template = ec2_client.describe_launch_templates(
                 LaunchTemplateIds=[launch_template_id]
             )
-            launch_template_version = launch_template["LaunchTemplates"][0]["LatestVersionNumber"]
-            launch_template_version = (
-                ec2_client.describe_launch_template_versions(
-                    LaunchTemplateId=launch_template_id,
-                    Versions=[str(launch_template_version)],
-                )
+            launch_template_version = launch_template["LaunchTemplates"][0][
+                "LatestVersionNumber"
+            ]
+            launch_template_version = ec2_client.describe_launch_template_versions(
+                LaunchTemplateId=launch_template_id,
+                Versions=[str(launch_template_version)],
             )
-            return launch_template_version["LaunchTemplateVersions"][0]["LaunchTemplateData"]["ImageId"]
-
+            return launch_template_version["LaunchTemplateVersions"][0][
+                "LaunchTemplateData"
+            ]["ImageId"]
 
     def start_instance_refresh(self):
         """

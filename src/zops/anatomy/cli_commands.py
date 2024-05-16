@@ -1,8 +1,9 @@
 import os
 from os.path import dirname
-from zops import Console
 
 import click
+
+from zops import Console
 
 
 @click.command()
@@ -13,12 +14,21 @@ import click
 @click.option("--project-name", default=None)
 @click.option("--recursive", "-r", is_flag=True)
 @click.pass_context
-def apply(ctx, directories, features_file, templates_dir, playbook_file, project_name, recursive):
+def apply(
+    ctx,
+    directories,
+    features_file,
+    templates_dir,
+    playbook_file,
+    project_name,
+    recursive,
+):
     """
     Apply templates.
     """
-    from .layers.playbook import AnatomyPlaybook
     from zerotk.path import find_up
+
+    from .layers.playbook import AnatomyPlaybook
 
     for i_directory in directories:
         project_name = project_name or os.path.basename(os.path.abspath(i_directory))

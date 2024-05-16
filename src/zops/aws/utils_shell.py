@@ -31,9 +31,7 @@ def shell(command, cwd=None):
     return True
 
 
-def packer(
-    cmd, filename, builder=None, on_error=None, vars=None, yes=False, cwd=None
-):
+def packer(cmd, filename, builder=None, on_error=None, vars=None, yes=False, cwd=None):
     """
     Executes external packer tool.
     """

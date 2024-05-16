@@ -1,18 +1,16 @@
 import datetime
 import json
 import os
+import shutil
 import subprocess
 import time
 from pathlib import Path
 
 import dateutil
-import shutil
 
 
 def format_date(d):
-    return (
-        d.replace(tzinfo=None).isoformat(" ", timespec="minutes") if d else ""
-    )
+    return d.replace(tzinfo=None).isoformat(" ", timespec="minutes") if d else ""
 
 
 def parse_date(d):

@@ -46,13 +46,14 @@ class AnatomyFeatureRegistry(object):
     @classmethod
     def register_from_file(cls, filename, templates_dir):
         from zerotk.yaml import yaml_from_file
+
         contents = yaml_from_file(filename)
         return cls.register_from_contents(contents, templates_dir)
 
     @classmethod
     def register_from_text(cls, text):
-        from zerotk.yaml import yaml_load
         from zerotk.text import dedent
+        from zerotk.yaml import yaml_load
 
         text = dedent(text)
         contents = yaml_load(text)
@@ -227,20 +228,17 @@ class AnatomyFeature(IAnatomyFeature):
     def create_file(self, filename, contents, executable=False):
         self.__files.append(
             self.File(
-                filename = filename,
-                contents = contents,
-                symlink = None,
-                executable = executable
+                filename=filename,
+                contents=contents,
+                symlink=None,
+                executable=executable,
             )
         )
 
     def create_link(self, filename, symlink, executable=False):
         self.__files.append(
             self.File(
-                filename = filename,
-                contents=None,
-                symlink=symlink,
-                executable=executable
+                filename=filename, contents=None, symlink=symlink, executable=executable
             )
         )
 

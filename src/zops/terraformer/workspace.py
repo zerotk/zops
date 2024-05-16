@@ -5,13 +5,20 @@ import subprocess
 import tempfile
 from logging import getLogger
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple, Union
+from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from terraformer.apply_log import TerraformApplyLog
 
-from .exceptions import TerraformError, TerraformRuntimeError
-from .mixins import ProcessResults, TerraformRun
+from .exceptions import TerraformError
+from .exceptions import TerraformRuntimeError
+from .mixins import ProcessResults
+from .mixins import TerraformRun
 from .plan import TerraformPlan
+
 
 logger = getLogger(__name__)
 
@@ -25,7 +32,9 @@ class TerraformWorkspace(TerraformRun):
         if not self.terraform_path:
             raise TerraformError("Terraform binary is missing from system.")
 
-        results = subprocess.run(["terraform", "-version", "-json"], stdout=subprocess.PIPE)
+        results = subprocess.run(
+            ["terraform", "-version", "-json"], stdout=subprocess.PIPE
+        )
         if results.returncode != 0:
             raise TerraformRuntimeError("Unable to get terraform version", results)
 
@@ -34,7 +43,9 @@ class TerraformWorkspace(TerraformRun):
         self.is_outdated = version_data["terraform_outdated"]
 
         if self.is_outdated:
-            logger.warning(f"Terraform version {self.version} is out of date. Please consider updating!")
+            logger.warning(
+                f"Terraform version {self.version} is out of date. Please consider updating!"
+            )
 
         self.platform = version_data["platform"]
         self.provider_selections = version_data["provider_selections"]
@@ -49,7 +60,9 @@ class TerraformWorkspace(TerraformRun):
         return self._subprocess_run(run_command, raise_exception_on_failure=True)
 
     def validate(self) -> ProcessResults:
-        return self._subprocess_run(["terraform", "validate", "-json"], raise_exception_on_failure=True)
+        return self._subprocess_run(
+            ["terraform", "validate", "-json"], raise_exception_on_failure=True
+        )
 
     def plan(
         self, error_function=None, output_function=None, output_path=None, destroy=False

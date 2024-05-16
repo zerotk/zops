@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
-'''
+
+
+"""
 Module for string manipulation functions
-'''
+"""
 import six
 
 
@@ -48,17 +50,18 @@ def dedent(text, ignore_first_linebreak=True, ignore_last_linebreak=True):
         behaviour is new in Python 2.5; older versions of this module incorrectly expanded tabs
         before searching for common leading whitespace.)
     """
-    if ignore_first_linebreak and '\n' in text:
-        first, others = text.split('\n', 1)
-        if first.strip('\n\r\t ') == '':
+    if ignore_first_linebreak and "\n" in text:
+        first, others = text.split("\n", 1)
+        if first.strip("\n\r\t ") == "":
             text = others
-    if ignore_last_linebreak and '\n' in text:
-        others, last = text.rsplit('\n', 1)
-        if last.strip('\n\r\t ') == '':
+    if ignore_last_linebreak and "\n" in text:
+        others, last = text.rsplit("\n", 1)
+        if last.strip("\n\r\t ") == "":
             text = others
 
     import re
-    _leading_whitespace_re = re.compile('(^[ ]*)(?:[^ \n])', re.MULTILINE)
+
+    _leading_whitespace_re = re.compile("(^[ ]*)(?:[^ \n])", re.MULTILINE)
 
     # Look for the longest leading string of spaces and tabs common to
     # all non-empty lines.
@@ -80,11 +83,11 @@ def dedent(text, ignore_first_linebreak=True, ignore_last_linebreak=True):
             margin = indent
 
     if margin:
-        text = re.sub(r'(?m)^' + margin, '', text)
+        text = re.sub(r"(?m)^" + margin, "", text)
     return text
 
 
-def indent(text, indent_=1, indentation='    '):
+def indent(text, indent_=1, indentation="    "):
     """
     Indents multiple lines of text.
 
@@ -104,7 +107,7 @@ def indent(text, indent_=1, indentation='    '):
 
     lines = text
     if isinstance(lines, six.text_type):
-        append_eol = lines.endswith('\n')
+        append_eol = lines.endswith("\n")
         lines = lines.splitlines()
     else:
         append_eol = True
@@ -116,15 +119,15 @@ def indent(text, indent_=1, indentation='    '):
         else:
             result.append(i)
     if result:
-        result = '\n'.join(result)
+        result = "\n".join(result)
         if append_eol:
-            result += '\n'
+            result += "\n"
     else:
-        result = ''
+        result = ""
     return result
 
 
-def safe_split(s, sep, maxsplit=None, default='', reversed=False):
+def safe_split(s, sep, maxsplit=None, default="", reversed=False):
     """
     Perform a string split granting the size of the resulting list.
 
@@ -139,9 +142,9 @@ def safe_split(s, sep, maxsplit=None, default='', reversed=False):
     # NOTE: Can't import "string" module for string.split/string.rsplit because of module name
     # clashing with this module.
     if reversed:
-        split = lambda s,*args: s.rsplit(*args)
+        split = lambda s, *args: s.rsplit(*args)
     else:
-        split = lambda s,*args: s.split(*args)
+        split = lambda s, *args: s.split(*args)
 
     if maxsplit is None:
         result = split(s, sep)
@@ -176,8 +179,8 @@ def format_it(iterable, format_expr="'%s'"):
     The format expression to use on each item. Defaults to "'%s'" so that the
     string representation of each item is encapsulated in single quotes.
     """
-    items = ', '.join((format_expr % (item,) for item in iterable))
-    return '[%s]' % (items,)
+    items = ", ".join((format_expr % (item,) for item in iterable))
+    return "[%s]" % (items,)
 
 
 def match_any(text, regexes):
@@ -190,6 +193,7 @@ def match_any(text, regexes):
         Return True if the given text matches any of the given regular expressions.
     """
     import re
+
     for i_regex in regexes:
         if re.match(i_regex, text) != None:
             return True
@@ -210,7 +214,9 @@ class TemplateEngine(object):
         return cls.__singleton
 
     def expand(self, text, variables, alt_expansion=False):
-        from jinja2 import Environment, Template, StrictUndefined
+        from jinja2 import Environment
+        from jinja2 import StrictUndefined
+        from jinja2 import Template
 
         if alt_expansion:
             kwargs = dict(

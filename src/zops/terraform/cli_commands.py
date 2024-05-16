@@ -1,6 +1,7 @@
 """
 Implementation of all commands for this package.
 """
+
 import json
 import os
 import re
@@ -8,6 +9,7 @@ import subprocess
 
 import click
 from addict import Dict as AttrDict
+
 
 ACTION_MAP = {
     "update": "~",
@@ -25,7 +27,7 @@ def run_command(cmdline) -> None:
             check=True,
             text=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT
+            stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as e:
         click.echo(e.stdout)
@@ -58,17 +60,21 @@ def tf_plan(deployment: str, workspace: str, verbose: bool) -> None:
 
     config = TerraformConfig(workdir)
 
-    _print_status(verbose_level, f"Generating terraform plan binary file: {tfplan_json}")
+    _print_status(
+        verbose_level, f"Generating terraform plan binary file: {tfplan_json}"
+    )
     if os.path.isfile("./bin/plan"):
         _print_status(verbose_level, f"* Using ./bin/plan")
-        cmd_line =f"./bin/plan {deployment} -out {tfplan_bin}"
+        cmd_line = f"./bin/plan {deployment} -out {tfplan_bin}"
     else:
         _print_status(verbose_level, f"* Selecting workspace {workspace}")
         run_command(f"terraform workspace select {workspace}")
 
-        cmd_line =f"terraform plan -out {tfplan_bin}"
+        cmd_line = f"terraform plan -out {tfplan_bin}"
         if os.path.isfile(var_file):
-            _print_status(verbose_level, f"* Found terraform variables file: {var_file}")
+            _print_status(
+                verbose_level, f"* Found terraform variables file: {var_file}"
+            )
             cmd_line += f" -var-file {var_file}"
     run_command(cmd_line)
 

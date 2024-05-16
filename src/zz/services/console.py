@@ -35,12 +35,12 @@ import functools
 
 class Console(object):
 
-    TITLE_COLOR = 'yellow'
-    EXECUTION_COLOR = 'green'
-    SETTING_COLOR = 'blue'
-    OUTPUT_COLOR = 'white'
-    INFO_COLOR = 'white'
-    DEBUG_COLOR = 'red'
+    TITLE_COLOR = "yellow"
+    EXECUTION_COLOR = "green"
+    SETTING_COLOR = "blue"
+    OUTPUT_COLOR = "white"
+    INFO_COLOR = "white"
+    DEBUG_COLOR = "red"
 
     SEPARATOR_CHAR = " "
     INDENTATION_TEXT = "  "
@@ -55,45 +55,48 @@ class Console(object):
     def singleton(cls) -> "Console":
         return cls()
 
-    def __init__(self, verbose_level:int=0):
+    def __init__(self, verbose_level: int = 0):
         self._verbose_level = verbose_level
 
-    def title(self, message:str, title_level:int=1, verbosity:int=0):
+    def title(self, message: str, title_level: int = 1, verbosity: int = 0):
         prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=0)
         self.secho(prefix + message, fg=self.TITLE_COLOR, verbosity=verbosity)
 
-#     def execution(self, message, verbose=0):
-#         self._secho(['$'] + [message], self.EXECUTION_COLOR)
-#
-#     def setting(self, message, verbose=0):
-#         self._secho(['!'] + list(args), self.SETTING_COLOR)
+    #     def execution(self, message, verbose=0):
+    #         self._secho(['$'] + [message], self.EXECUTION_COLOR)
+    #
+    #     def setting(self, message, verbose=0):
+    #         self._secho(['!'] + list(args), self.SETTING_COLOR)
 
-    def item(self, message:str, indent:int=0, fg=OUTPUT_COLOR, verbosity:int=0):
+    def item(self, message: str, indent: int = 0, fg=OUTPUT_COLOR, verbosity: int = 0):
         prefix = self._prefix(self.ITEM_PREFIX, indent=indent)
         self.secho(prefix + message, fg=fg, verbosity=verbosity)
 
-#     def output(self, *args):
-#         self._secho(args, self.OUTPUT_COLOR)
-#
-#     def response(self, *args):
-#         self._secho(['>'] + list(args), self.OUTPUT_COLOR)
+    #     def output(self, *args):
+    #         self._secho(args, self.OUTPUT_COLOR)
+    #
+    #     def response(self, *args):
+    #         self._secho(['>'] + list(args), self.OUTPUT_COLOR)
 
-    def info(self, message:str, indent:int=0, verbosity:int=0):
+    def info(self, message: str, indent: int = 0, verbosity: int = 0):
         prefix = self._prefix(self.INFO_PREFIX, indent=indent)
-        self.secho(message, self.INFO_COLOR)
+        self.secho(prefix + message, self.INFO_COLOR)
 
-    def debug(self, message:str, indent:int=0, verbosity:int=0):
+    def debug(self, message: str, indent: int = 0, verbosity: int = 0):
         prefix = self._prefix(self.DEBUG_PREFIX, indent=indent)
         self.secho(prefix + message, fg=self.DEBUG_COLOR, verbosity=verbosity)
 
-    def _prefix(self, prefix:str, indent:int=0, separator:str=SEPARATOR_CHAR) -> str:
+    def _prefix(
+        self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
+    ) -> str:
         return self.INDENTATION_TEXT * indent + prefix + separator
 
-    def secho(self, message:str, fg=OUTPUT_COLOR, verbosity:int=0) -> None:
+    def secho(self, message: str, fg=OUTPUT_COLOR, verbosity: int = 0) -> None:
         if self._verbose_level < verbosity:
             return
 
-        message.rstrip('\n')
+        message.rstrip("\n")
 
         import click
+
         click.secho(message, fg=fg)

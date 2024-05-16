@@ -40,7 +40,7 @@ function monorepo__rebase_it () {
   git branch -f "$REBASE_END" $hash
   monorepo__title "Rebase $REBASE_CURSOR [$(git rev-parse --short $REBASE_CURSOR)] starting on $REBASE_START [$(git rev-parse --short $REBASE_START)] onto $REBASE_SUCCESS [$(git rev-parse --short $REBASE_SUCCESS)]"
   git rebase --rebase-merges=rebase-cousins $REBASE_START --onto=$REBASE_SUCCESS &> /tmp/$REBASE_CURSOR.log  || true
-  
+
   local ERRORED_COMMIT=$(gawk '/Could not apply/ { print(substr($4, 0, 7)) }' /tmp/$REBASE_CURSOR.log)
   local LOOP_COUNT=1
   local LOOP_MAX=20
@@ -104,11 +104,11 @@ function monorepo__initialization () {
   git reset --hard &>> /dev/null
   git switch -q "$1"
   monorepo__cleanup
-  
+
   # Start in the given commit
   git branch -f $REBASE_SUCCESS "$1"
   git switch -q $REBASE_SUCCESS
-  
+
 #  for i_origin in ${MONOREPO_ORIGINS[@]}; do
 #    monorepo__title "init $i_origin-master"
 #

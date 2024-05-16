@@ -1,7 +1,7 @@
-from zz.anatomy.layers.feature import AnatomyFeatureRegistry
-from zerotk.yaml import yaml_from_file
-
 from collections import OrderedDict
+
+from zerotk.yaml import yaml_from_file
+from zz.anatomy.layers.feature import AnatomyFeatureRegistry
 
 
 class AnatomyPlaybook(object):
@@ -62,8 +62,9 @@ class AnatomyPlaybook(object):
         self.__variables[feature_name] = variables
 
     def apply(self, directory):
-        from zz.anatomy.layers.tree import AnatomyTree
         import os
+
+        from zz.anatomy.layers.tree import AnatomyTree
 
         tree = AnatomyTree()
 

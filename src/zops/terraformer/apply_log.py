@@ -1,11 +1,20 @@
 import json
 from logging import getLogger
-from typing import Any, Dict, List
+from typing import Any
+from typing import Dict
+from typing import List
+
 
 logger = getLogger(__name__)
 
 
-RESOURCE_TYPES = ["apply_start", "apply_progress", "apply_complete", "apply_errored", "planned_change"]
+RESOURCE_TYPES = [
+    "apply_start",
+    "apply_progress",
+    "apply_complete",
+    "apply_errored",
+    "planned_change",
+]
 
 RESOURCE_STATUSES = {
     "planned_change": "planned",

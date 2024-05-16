@@ -1,48 +1,53 @@
 from __future__ import unicode_literals
-'''
+
+
+"""
 This module contains a selection of file related functions that can be used anywhere.
 
 Some sort of wrapper for common builtin 'os' operations with a nicer interface.
 
 These functions abstract file location, most of them work for either local, ftp or http protocols
-'''
+"""
 import contextlib
 import io
 import os
 import re
 import sys
+
 import six
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # Constants
-#===================================================================================================
-SEPARATOR_UNIX = '/'
-SEPARATOR_WINDOWS = '\\'
+# ===================================================================================================
+SEPARATOR_UNIX = "/"
+SEPARATOR_WINDOWS = "\\"
 EOL_STYLE_NONE = None  # Binary files
-EOL_STYLE_UNIX = '\n'
-EOL_STYLE_WINDOWS = '\r\n'
-EOL_STYLE_MAC = '\r'
+EOL_STYLE_UNIX = "\n"
+EOL_STYLE_WINDOWS = "\r\n"
+EOL_STYLE_MAC = "\r"
+
 
 def _GetNativeEolStyle(platform=sys.platform):
-    '''
+    """
     Internal function that determines EOL_STYLE_NATIVE constant with the proper value for the
     current platform.
-    '''
+    """
     _NATIVE_EOL_STYLE_MAP = {
-        'win32' : EOL_STYLE_WINDOWS,
-        'linux2' : EOL_STYLE_UNIX,
-        'linux' : EOL_STYLE_UNIX,
-        'darwin' : EOL_STYLE_MAC,
+        "win32": EOL_STYLE_WINDOWS,
+        "linux2": EOL_STYLE_UNIX,
+        "linux": EOL_STYLE_UNIX,
+        "darwin": EOL_STYLE_MAC,
     }
     result = _NATIVE_EOL_STYLE_MAP.get(platform)
 
     if result is None:
         from ._exceptions import UnknownPlatformError
+
         raise UnknownPlatformError(platform)
 
     return result
+
 
 EOL_STYLE_NATIVE = _GetNativeEolStyle()
 
@@ -62,12 +67,13 @@ DRIVE_CDROM = 5
 # The drive is a RAM disk
 DRIVE_RAMDISK = 6
 
-#===================================================================================================
+
+# ===================================================================================================
 # Cwd
-#===================================================================================================
+# ===================================================================================================
 @contextlib.contextmanager
 def Cwd(directory):
-    '''
+    """
     Context manager for current directory (uses with_statement)
 
     e.g.:
@@ -79,7 +85,7 @@ def Cwd(directory):
 
     :param unicode directory:
         Target directory to enter
-    '''
+    """
     old_directory = six.moves.getcwd()
     if directory is not None:
         os.chdir(directory)
@@ -89,12 +95,11 @@ def Cwd(directory):
         os.chdir(old_directory)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # NormalizePath
-#===================================================================================================
+# ===================================================================================================
 def NormalizePath(path):
-    '''
+    """
     Normalizes a path maintaining the final slashes.
 
     Some environment variables need the final slash in order to work.
@@ -108,19 +113,19 @@ def NormalizePath(path):
     :rtype: unicode
     :returns:
         Normalized path
-    '''
-    if path.endswith('/') or path.endswith('\\'):
+    """
+    if path.endswith("/") or path.endswith("\\"):
         slash = os.path.sep
     else:
-        slash = ''
+        slash = ""
     return os.path.normpath(path) + slash
 
 
-#===================================================================================================
+# ===================================================================================================
 # CanonicalPath
-#===================================================================================================
+# ===================================================================================================
 def CanonicalPath(path):
-    '''
+    """
     Returns a version of a path that is unique.
 
     Given two paths path1 and path2:
@@ -133,7 +138,7 @@ def CanonicalPath(path):
     :rtype: unicode
     :returns:
         The unique path.
-    '''
+    """
     path = os.path.normpath(path)
     path = os.path.abspath(path)
     path = os.path.normcase(path)
@@ -141,11 +146,11 @@ def CanonicalPath(path):
     return path
 
 
-#===================================================================================================
+# ===================================================================================================
 # StandardizePath
-#===================================================================================================
+# ===================================================================================================
 def StandardizePath(path, strip=False):
-    '''
+    """
     Replaces all slashes and backslashes with the target separator
 
     StandardPath:
@@ -154,19 +159,18 @@ def StandardizePath(path, strip=False):
 
     :param bool strip:
         If True, removes additional slashes from the end of the path.
-    '''
+    """
     path = path.replace(SEPARATOR_WINDOWS, SEPARATOR_UNIX)
     if strip:
         path = path.rstrip(SEPARATOR_UNIX)
     return path
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # NormStandardPath
-#===================================================================================================
+# ===================================================================================================
 def NormStandardPath(path):
-    '''
+    """
     Normalizes a standard path (posixpath.normpath) maintaining any slashes at the end of the path.
 
     Normalize:
@@ -175,21 +179,21 @@ def NormStandardPath(path):
     StandardPath:
         We are defining that the standard-path is the one with only back-slashes in it, either
         on Windows or any other platform.
-    '''
+    """
     import posixpath
-    if path.endswith('/'):
-        slash = '/'
+
+    if path.endswith("/"):
+        slash = "/"
     else:
-        slash = ''
+        slash = ""
     return posixpath.normpath(path) + slash
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateMD5
-#===================================================================================================
+# ===================================================================================================
 def CreateMD5(source_filename, target_filename=None):
-    '''
+    """
     Creates a md5 file from a source file (contents are the md5 hash of source file)
 
     :param unicode source_filename:
@@ -200,11 +204,12 @@ def CreateMD5(source_filename, target_filename=None):
         Name of the target file with the md5 contents
 
         If None, defaults to source_filename + '.md5'
-    '''
+    """
     if target_filename is None:
-        target_filename = source_filename + '.md5'
+        target_filename = source_filename + ".md5"
 
     from six.moves.urllib.parse import urlparse
+
     source_url = urlparse(source_filename)
 
     # Obtain MD5 hex
@@ -219,13 +224,16 @@ def CreateMD5(source_filename, target_filename=None):
     CreateFile(target_filename, md5_contents)
 
 
+MD5_SKIP = "md5_skip"  # Returned to show that a file copy was skipped because it hasn't changed.
 
-MD5_SKIP = 'md5_skip'  # Returned to show that a file copy was skipped because it hasn't changed.
-#===================================================================================================
+
+# ===================================================================================================
 # CopyFile
-#===================================================================================================
-def CopyFile(source_filename, target_filename, override=True, md5_check=False, copy_symlink=True):
-    '''
+# ===================================================================================================
+def CopyFile(
+    source_filename, target_filename, override=True, md5_check=False, copy_symlink=True
+):
+    """
     Copy a file from source to target.
 
     :param  source_filename:
@@ -260,21 +268,22 @@ def CopyFile(source_filename, target_filename, override=True, md5_check=False, c
         MD5_SKIP if the file was not copied because there was a matching .md5 file
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from ._exceptions import FileNotFoundError
 
     # Check override
     if not override and Exists(target_filename):
         from ._exceptions import FileAlreadyExistsError
+
         raise FileAlreadyExistsError(target_filename)
 
     # Don't do md5 check for md5 files themselves.
-    md5_check = md5_check and not target_filename.endswith('.md5')
+    md5_check = md5_check and not target_filename.endswith(".md5")
 
     # If we enabled md5 checks, ignore copy of files that haven't changed their md5 contents.
     if md5_check:
-        source_md5_filename = source_filename + '.md5'
-        target_md5_filename = target_filename + '.md5'
+        source_md5_filename = source_filename + ".md5"
+        target_md5_filename = target_filename + ".md5"
         try:
             source_md5_contents = GetFileContents(source_md5_filename)
         except FileNotFoundError:
@@ -285,21 +294,27 @@ def CopyFile(source_filename, target_filename, override=True, md5_check=False, c
         except FileNotFoundError:
             target_md5_contents = None
 
-        if source_md5_contents is not None and \
-           source_md5_contents == target_md5_contents and \
-           Exists(target_filename):
+        if (
+            source_md5_contents is not None
+            and source_md5_contents == target_md5_contents
+            and Exists(target_filename)
+        ):
             return MD5_SKIP
 
     # Copy source file
     _DoCopyFile(source_filename, target_filename, copy_symlink=copy_symlink)
 
     # If we have a source_md5, but no target_md5, create the target_md5 file
-    if md5_check and source_md5_contents is not None and source_md5_contents != target_md5_contents:
+    if (
+        md5_check
+        and source_md5_contents is not None
+        and source_md5_contents != target_md5_contents
+    ):
         CreateFile(target_md5_filename, source_md5_contents)
 
 
 def _DoCopyFile(source_filename, target_filename, copy_symlink=True):
-    '''
+    """
     :param unicode source_filename:
         The source filename.
         Schemas: local, ftp, http
@@ -313,7 +328,7 @@ def _DoCopyFile(source_filename, target_filename, copy_symlink=True):
 
     :raises FileNotFoundError:
         If source_filename does not exist
-    '''
+    """
     from six.moves.urllib.parse import urlparse
 
     source_url = urlparse(source_filename)
@@ -322,34 +337,40 @@ def _DoCopyFile(source_filename, target_filename, copy_symlink=True):
     if _UrlIsLocal(source_url):
         if not Exists(source_filename):
             from ._exceptions import FileNotFoundError
+
             raise FileNotFoundError(source_filename)
 
         if _UrlIsLocal(target_url):
             # local to local
             _CopyFileLocal(source_filename, target_filename, copy_symlink=copy_symlink)
-        elif target_url.scheme in ['ftp']:
+        elif target_url.scheme in ["ftp"]:
             from ._exceptions import NotImplementedProtocol
+
             raise NotImplementedProtocol(target_url.scheme)
         else:
             from ._exceptions import NotImplementedProtocol
+
             raise NotImplementedProtocol(target_url.scheme)
 
-    elif source_url.scheme in ['http', 'https', 'ftp']:
+    elif source_url.scheme in ["http", "https", "ftp"]:
         if _UrlIsLocal(target_url):
             # HTTP/FTP to local
             from ._exceptions import NotImplementedProtocol
+
             raise NotImplementedProtocol(target_url.scheme)
         else:
             # HTTP/FTP to other ==> NotImplemented
             from ._exceptions import NotImplementedProtocol
+
             raise NotImplementedProtocol(target_url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol  # @Reimport
+
         raise NotImplementedProtocol(source_url.scheme)
 
 
 def _CopyFileLocal(source_filename, target_filename, copy_symlink=True):
-    '''
+    """
     Copy a file locally to a directory.
 
     :param unicode source_filename:
@@ -363,8 +384,9 @@ def _CopyFileLocal(source_filename, target_filename, copy_symlink=True):
         a symlink.
 
         If False, the file being linked will be copied instead.
-    '''
+    """
     import shutil
+
     try:
         # >>> Create the target_filename directory if necessary
         dir_name = os.path.dirname(target_filename)
@@ -381,26 +403,31 @@ def _CopyFileLocal(source_filename, target_filename, copy_symlink=True):
             CreateLink(source_filename, target_filename)
         else:
             # shutil can't copy links in Windows, so we must find the real file manually
-            if sys.platform == 'win32':
+            if sys.platform == "win32":
                 while IsLink(source_filename):
                     link = ReadLink(source_filename)
                     if os.path.isabs(link):
                         source_filename = link
                     else:
-                        source_filename = os.path.join(os.path.dirname(source_filename), link)
+                        source_filename = os.path.join(
+                            os.path.dirname(source_filename), link
+                        )
 
             shutil.copyfile(source_filename, target_filename)
             shutil.copymode(source_filename, target_filename)
     except Exception as e:
-        raise(e, 'While executiong _filesystem._CopyFileLocal(%s, %s)' % (source_filename, target_filename))
+        raise (
+            e,
+            "While executiong _filesystem._CopyFileLocal(%s, %s)"
+            % (source_filename, target_filename),
+        )
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CopyFiles
-#===================================================================================================
+# ===================================================================================================
 def CopyFiles(source_dir, target_dir, create_target_dir=False, md5_check=False):
-    '''
+    """
     Copy files from the given source to the target.
 
     :param unicode source_dir:
@@ -430,13 +457,13 @@ def CopyFiles(source_dir, target_dir, create_target_dir=False, md5_check=False):
     .. seealso:: CopyFile for documentation on accepted protocols
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     import fnmatch
 
     # Check if we were given a directory or a directory with mask
     if IsDir(source_dir):
         # Yes, it's a directory, copy everything from it
-        source_mask = '*'
+        source_mask = "*"
     else:
         # Split directory and mask
         source_dir, source_mask = os.path.split(source_dir)
@@ -447,6 +474,7 @@ def CopyFiles(source_dir, target_dir, create_target_dir=False, md5_check=False):
             CreateDirectory(target_dir)
         else:
             from ._exceptions import DirectoryNotFoundError
+
             raise DirectoryNotFoundError(target_dir)
 
     # List and match files
@@ -458,26 +486,30 @@ def CopyFiles(source_dir, target_dir, create_target_dir=False, md5_check=False):
 
     # Copy files
     for i_filename in filenames:
-        if md5_check and i_filename.endswith('.md5'):
+        if md5_check and i_filename.endswith(".md5"):
             continue  # md5 files will be copied by CopyFile when copying their associated files
 
         if fnmatch.fnmatch(i_filename, source_mask):
-            source_path = source_dir + '/' + i_filename
-            target_path = target_dir + '/' + i_filename
+            source_path = source_dir + "/" + i_filename
+            target_path = target_dir + "/" + i_filename
 
             if IsDir(source_path):
                 # If we found a directory, copy it recursively
-                CopyFiles(source_path, target_path, create_target_dir=True, md5_check=md5_check)
+                CopyFiles(
+                    source_path,
+                    target_path,
+                    create_target_dir=True,
+                    md5_check=md5_check,
+                )
             else:
                 CopyFile(source_path, target_path, md5_check=md5_check)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CopyFilesX
-#===================================================================================================
+# ===================================================================================================
 def CopyFilesX(file_mapping):
-    '''
+    """
     Copies files into directories, according to a file mapping
 
     :param list(tuple(unicode,unicode)) file_mapping:
@@ -489,11 +521,13 @@ def CopyFilesX(file_mapping):
         List of files copied. (source_filename, target_filename)
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     # List files that match the mapping
     files = []
     for i_target_path, i_source_path_mask in file_mapping:
-        tree_recurse, flat_recurse, dirname, in_filters, out_filters = ExtendedPathMask.Split(i_source_path_mask)
+        tree_recurse, flat_recurse, dirname, in_filters, out_filters = (
+            ExtendedPathMask.Split(i_source_path_mask)
+        )
 
         _AssertIsLocal(dirname)
 
@@ -502,15 +536,14 @@ def CopyFilesX(file_mapping):
             if os.path.isdir(i_source_filename):
                 continue  # Do not copy dirs
 
-            i_target_filename = i_source_filename[len(dirname) + 1:]
+            i_target_filename = i_source_filename[len(dirname) + 1 :]
             if flat_recurse:
                 i_target_filename = os.path.basename(i_target_filename)
             i_target_filename = os.path.join(i_target_path, i_target_filename)
 
-            files.append((
-                StandardizePath(i_source_filename),
-                StandardizePath(i_target_filename)
-            ))
+            files.append(
+                (StandardizePath(i_source_filename), StandardizePath(i_target_filename))
+            )
 
     # Copy files
     for i_source_filename, i_target_filename in files:
@@ -523,12 +556,11 @@ def CopyFilesX(file_mapping):
     return files
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # IsFile
-#===================================================================================================
+# ===================================================================================================
 def IsFile(path):
-    '''
+    """
     :param unicode path:
         Path to a file (local or ftp)
 
@@ -540,8 +572,9 @@ def IsFile(path):
         True if the file exists
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     url = urlparse(path)
 
     if _UrlIsLocal(url):
@@ -549,16 +582,18 @@ def IsFile(path):
             return IsFile(ReadLink(path))
         return os.path.isfile(path)
 
-    elif url.scheme == 'ftp':
+    elif url.scheme == "ftp":
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(url.scheme)
 
 
 def GetDriveType(path):
-    '''
+    """
     Determine the type of drive, which can be one of the following values:
         DRIVE_UNKNOWN = 0
             The drive type cannot be determined.
@@ -587,31 +622,31 @@ def GetDriveType(path):
 
     :param path:
         Path to a file or directory
-    '''
-    if sys.platform == 'win32':
+    """
+    if sys.platform == "win32":
         import ctypes
+
         kdll = ctypes.windll.LoadLibrary("kernel32.dll")
 
-        return kdll.GetDriveType(path + '\\')
+        return kdll.GetDriveType(path + "\\")
 
         import win32file
+
         if IsFile(path):
             path = os.path.dirname(path)
 
         # A trailing backslash is required.
-        return win32file.GetDriveType(path + '\\')
+        return win32file.GetDriveType(path + "\\")
 
     else:
         return DRIVE_UNKNOWN
 
 
-
-
-#===================================================================================================
+# ===================================================================================================
 # IsDir
-#===================================================================================================
+# ===================================================================================================
 def IsDir(directory):
-    '''
+    """
     :param unicode directory:
         A path
 
@@ -623,33 +658,36 @@ def IsDir(directory):
         If the path protocol is not local or ftp
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     directory_url = urlparse(directory)
 
     if _UrlIsLocal(directory_url):
         return os.path.isdir(directory)
-    elif directory_url.scheme == 'ftp':
+    elif directory_url.scheme == "ftp":
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(target_url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # Exists
-#===================================================================================================
+# ===================================================================================================
 def Exists(path):
-    '''
+    """
     :rtype: bool
     :returns:
         True if the path already exists (either a file or a directory)
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     path_url = urlparse(path)
 
     # Handle local
@@ -658,12 +696,11 @@ def Exists(path):
     return IsFile(path) or IsDir(path)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CopyDirectory
-#===================================================================================================
+# ===================================================================================================
 def CopyDirectory(source_dir, target_dir, override=False):
-    '''
+    """
     Recursively copy a directory tree.
 
     :param unicode source_dir:
@@ -677,7 +714,7 @@ def CopyDirectory(source_dir, target_dir, override=False):
 
     :raises NotImplementedForRemotePathError:
         If trying to copy to/from remote directories
-    '''
+    """
     _AssertIsLocal(source_dir)
     _AssertIsLocal(target_dir)
 
@@ -685,15 +722,15 @@ def CopyDirectory(source_dir, target_dir, override=False):
         DeleteDirectory(target_dir, skip_on_error=False)
 
     import shutil
+
     shutil.copytree(source_dir, target_dir)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # DeleteFile
-#===================================================================================================
+# ===================================================================================================
 def DeleteFile(target_filename):
-    '''
+    """
     Deletes the given local filename.
 
     .. note:: If file doesn't exist this method has no effect.
@@ -706,7 +743,7 @@ def DeleteFile(target_filename):
 
     :raises FileOnlyActionError:
         Raised when filename refers to a directory.
-    '''
+    """
     _AssertIsLocal(target_filename)
 
     try:
@@ -716,17 +753,19 @@ def DeleteFile(target_filename):
             os.remove(target_filename)
         elif IsDir(target_filename):
             from ._exceptions import FileOnlyActionError
+
             raise FileOnlyActionError(target_filename)
     except Exception as e:
-        raise(e, 'While executing filesystem.DeleteFile(%s)' % (target_filename))
+        raise (e, "While executing filesystem.DeleteFile(%s)" % (target_filename))
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # AppendToFile
-#===================================================================================================
-def AppendToFile(filename, contents, eol_style=EOL_STYLE_NATIVE, encoding=None, binary=False):
-    '''
+# ===================================================================================================
+def AppendToFile(
+    filename, contents, eol_style=EOL_STYLE_NATIVE, encoding=None, binary=False
+):
+    """
     Appends content to a local file.
 
     :param unicode filename:
@@ -752,10 +791,12 @@ def AppendToFile(filename, contents, eol_style=EOL_STYLE_NATIVE, encoding=None, 
     :raises ValueError:
         If trying to mix unicode `contents` without `encoding`, or `encoding` without
         unicode `contents`
-    '''
+    """
     _AssertIsLocal(filename)
 
-    assert isinstance(contents, six.text_type) ^ binary, 'Must always receive unicode contents, unless binary=True'
+    assert (
+        isinstance(contents, six.text_type) ^ binary
+    ), "Must always receive unicode contents, unless binary=True"
 
     if not binary:
         # Replaces eol on each line by the given eol_style.
@@ -765,19 +806,18 @@ def AppendToFile(filename, contents, eol_style=EOL_STYLE_NATIVE, encoding=None, 
         # tries to do its own line ending handling.
         contents = contents.encode(encoding or sys.getfilesystemencoding())
 
-    oss = open(filename, 'ab')
+    oss = open(filename, "ab")
     try:
         oss.write(contents)
     finally:
         oss.close()
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # MoveFile
-#===================================================================================================
+# ===================================================================================================
 def MoveFile(source_filename, target_filename):
-    '''
+    """
     Moves a file.
 
     :param unicode source_filename:
@@ -786,20 +826,20 @@ def MoveFile(source_filename, target_filename):
 
     :raises NotImplementedForRemotePathError:
         If trying to operate with non-local files.
-    '''
+    """
     _AssertIsLocal(source_filename)
     _AssertIsLocal(target_filename)
 
     import shutil
+
     shutil.move(source_filename, target_filename)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # MoveDirectory
-#===================================================================================================
+# ===================================================================================================
 def MoveDirectory(source_dir, target_dir):
-    '''
+    """
     Moves a directory.
 
     :param unicode source_dir:
@@ -810,37 +850,42 @@ def MoveDirectory(source_dir, target_dir):
         If trying to move anything other than:
             Local dir -> local dir
             FTP dir -> FTP dir (same host)
-    '''
+    """
     if not IsDir(source_dir):
         from ._exceptions import DirectoryNotFoundError
+
         raise DirectoryNotFoundError(source_dir)
 
     if Exists(target_dir):
         from ._exceptions import DirectoryAlreadyExistsError
+
         raise DirectoryAlreadyExistsError(target_dir)
 
     from six.moves.urllib.parse import urlparse
+
     source_url = urlparse(source_dir)
     target_url = urlparse(target_dir)
 
     # Local to local
     if _UrlIsLocal(source_url) and _UrlIsLocal(target_url):
         import shutil
+
         shutil.move(source_dir, target_dir)
 
     # FTP to FTP
-    elif source_url.scheme == 'ftp' and target_url.scheme == 'ftp':
+    elif source_url.scheme == "ftp" and target_url.scheme == "ftp":
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(target_url.scheme)
     else:
-        raise NotImplementedError('Can only move directories local->local or ftp->ftp')
+        raise NotImplementedError("Can only move directories local->local or ftp->ftp")
 
 
-#===================================================================================================
+# ===================================================================================================
 # GetFileContents
-#===================================================================================================
+# ===================================================================================================
 def GetFileContents(filename, binary=False, encoding=None, newline=None):
-    '''
+    """
     Reads a file and returns its contents. Works for both local and remote files.
 
     :param unicode filename:
@@ -861,7 +906,7 @@ def GetFileContents(filename, binary=False, encoding=None, newline=None):
         Returns unicode string when `encoding` is not None.
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     source_file = OpenFile(filename, binary=binary, encoding=encoding, newline=newline)
     try:
         contents = source_file.read()
@@ -871,11 +916,11 @@ def GetFileContents(filename, binary=False, encoding=None, newline=None):
     return contents
 
 
-#===================================================================================================
+# ===================================================================================================
 # GetFileLines
-#===================================================================================================
+# ===================================================================================================
 def GetFileLines(filename, newline=None, encoding=None):
-    '''
+    """
     Reads a file and returns its contents as a list of lines. Works for both local and remote files.
 
     :param unicode filename:
@@ -892,17 +937,17 @@ def GetFileLines(filename, newline=None, encoding=None):
         The file's lines
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     return GetFileContents(
         filename,
         binary=False,
         encoding=encoding,
         newline=newline,
-    ).split('\n')
+    ).split("\n")
 
 
 def OpenFile(filename, binary=False, newline=None, encoding=None):
-    '''
+    """
     Open a file and returns it.
     Consider the possibility of a remote file (HTTP, HTTPS, FTP)
 
@@ -928,30 +973,32 @@ def OpenFile(filename, binary=False, newline=None, encoding=None):
         When the given filename cannot be found
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     filename_url = urlparse(filename)
 
     # Check if file is local
     if _UrlIsLocal(filename_url):
         if not os.path.isfile(filename):
             from ._exceptions import FileNotFoundError
+
             raise FileNotFoundError(filename)
 
-        mode = 'rb' if binary else 'r'
+        mode = "rb" if binary else "r"
         return io.open(filename, mode, encoding=encoding, newline=newline)
 
     # Not local
     from ._exceptions import NotImplementedProtocol
+
     raise NotImplementedProtocol(target_url.scheme)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # ListFiles
-#===================================================================================================
+# ===================================================================================================
 def ListFiles(directory):
-    '''
+    """
     Lists the files in the given directory
 
     :type directory: unicode | unicode
@@ -969,8 +1016,9 @@ def ListFiles(directory):
         If file protocol is not local or FTP
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     directory_url = urlparse(directory)
 
     # Handle local
@@ -980,20 +1028,21 @@ def ListFiles(directory):
         return os.listdir(directory)
 
     # Handle FTP
-    elif directory_url.scheme == 'ftp':
+    elif directory_url.scheme == "ftp":
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CheckIsFile
-#===================================================================================================
+# ===================================================================================================
 def CheckIsFile(filename):
-    '''
+    """
     Check if the given file exists.
 
     @filename: unicode
@@ -1001,18 +1050,18 @@ def CheckIsFile(filename):
 
     @raise: FileNotFoundError
         Raises if the file does not exist.
-    '''
+    """
     if not IsFile(filename):
         from ._exceptions import FileNotFoundError
+
         raise FileNotFoundError(filename)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CheckIsDir
-#===================================================================================================
+# ===================================================================================================
 def CheckIsDir(directory):
-    '''
+    """
     Check if the given directory exists.
 
     @filename: unicode
@@ -1020,18 +1069,25 @@ def CheckIsDir(directory):
 
     @raise: DirectoryNotFoundError
         Raises if the directory does not exist.
-    '''
+    """
     if not IsDir(directory):
         from ._exceptions import DirectoryNotFoundError
+
         raise DirectoryNotFoundError(directory)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateFile
-#===================================================================================================
-def CreateFile(filename, contents, eol_style=EOL_STYLE_NATIVE, create_dir=True, encoding=None, binary=False):
-    '''
+# ===================================================================================================
+def CreateFile(
+    filename,
+    contents,
+    eol_style=EOL_STYLE_NATIVE,
+    create_dir=True,
+    encoding=None,
+    binary=False,
+):
+    """
     Create a file with the given contents.
 
     :param unicode filename:
@@ -1067,14 +1123,14 @@ def CreateFile(filename, contents, eol_style=EOL_STYLE_NATIVE, create_dir=True, 
         unicode `contents`
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     # Lots of checks when writing binary files
     if binary:
         if isinstance(contents, six.text_type):
-            raise TypeError('contents must be str (bytes) when binary=True')
+            raise TypeError("contents must be str (bytes) when binary=True")
     else:
         if not isinstance(contents, six.text_type):
-            raise TypeError('contents must be unicode when binary=False')
+            raise TypeError("contents must be unicode when binary=False")
 
         # Replaces eol on each line by the given eol_style.
         contents = _HandleContentsEol(contents, eol_style)
@@ -1092,29 +1148,31 @@ def CreateFile(filename, contents, eol_style=EOL_STYLE_NATIVE, create_dir=True, 
             CreateDirectory(dirname)
 
     from six.moves.urllib.parse import urlparse
+
     filename_url = urlparse(filename)
 
     # Handle local
     if _UrlIsLocal(filename_url):
         # Always writing as binary (see handling above)
-        with open(filename, 'wb') as oss:
+        with open(filename, "wb") as oss:
             oss.write(contents)
 
     # Handle FTP
-    elif filename_url.scheme == 'ftp':
+    elif filename_url.scheme == "ftp":
         # Always writing as binary (see handling above)
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(filename_url.scheme)
 
     return filename
 
 
-
 def ReplaceInFile(filename, old, new, encoding=None):
-    '''
+    """
     Replaces all occurrences of "old" by "new" in the given file.
 
     :param unicode filename:
@@ -1128,19 +1186,18 @@ def ReplaceInFile(filename, old, new, encoding=None):
 
     :return unicode:
         The new contents of the file.
-    '''
+    """
     contents = GetFileContents(filename, encoding=encoding)
     contents = contents.replace(old, new)
     CreateFile(filename, contents, encoding=encoding)
     return contents
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateDirectory
-#===================================================================================================
+# ===================================================================================================
 def CreateDirectory(directory):
-    '''
+    """
     Create directory including any missing intermediate directory.
 
     :param unicode directory:
@@ -1152,8 +1209,9 @@ def CreateDirectory(directory):
         If protocol is not local or FTP.
 
     .. seealso:: FTP LIMITATIONS at this module's doc for performance issues information
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     directory_url = urlparse(directory)
 
     # Handle local
@@ -1163,27 +1221,29 @@ def CreateDirectory(directory):
         return directory
 
     # Handle FTP
-    elif directory_url.scheme == 'ftp':
+    elif directory_url.scheme == "ftp":
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
     else:
         from ._exceptions import NotImplementedProtocol
+
         raise NotImplementedProtocol(directory_url.scheme)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateTemporaryDirectory
-#===================================================================================================
+# ===================================================================================================
 class CreateTemporaryDirectory(object):
-    '''
+    """
     Context manager to create a temporary file and remove if at the context end.
 
     :ivar unicode dirname:
         Name of the created directory
-    '''
-    def __init__(self, suffix='', prefix='tmp', base_dir=None, maximum_attempts=100):
-        '''
+    """
+
+    def __init__(self, suffix="", prefix="tmp", base_dir=None, maximum_attempts=100):
+        """
         :param unicode suffix:
             A suffix to add in the name of the created directory
 
@@ -1197,7 +1257,7 @@ class CreateTemporaryDirectory(object):
         :param int maximum_attemps:
             The maximum number of attempts to obtain the temp dir name.
 
-        '''
+        """
         self.suffix = suffix
         self.prefix = prefix
         self.base_dir = base_dir
@@ -1205,25 +1265,28 @@ class CreateTemporaryDirectory(object):
 
         self.dirname = None
 
-
     def __enter__(self):
-        '''
+        """
         :return unicode:
             The path to the created temp file.
-        '''
+        """
         if self.base_dir is None:
             # If no base directoy was given, let us create a dir in system temp area
             import tempfile
+
             self.dirname = tempfile.mkdtemp(self.suffix, self.prefix)
             return self.dirname
-
 
         # Listing the files found in the base dir
         existing_files = set(ListFiles(self.base_dir))
 
         # If a base dir was given, let us generate a unique directory name there and use it
         for random_component in IterHashes(iterator_size=self.maximum_attempts):
-            candidate_name = '%stemp_dir_%s%s' % (self.prefix, random_component, self.suffix)
+            candidate_name = "%stemp_dir_%s%s" % (
+                self.prefix,
+                random_component,
+                self.suffix,
+            )
             candidate_path = os.path.join(self.base_dir, candidate_name)
             if candidate_path not in existing_files:
                 CreateDirectory(candidate_path)
@@ -1231,35 +1294,36 @@ class CreateTemporaryDirectory(object):
                 return self.dirname
 
         raise RuntimeError(
-            'It was not possible to obtain a temporary dirname from %s' % self.base_dir)
-
+            "It was not possible to obtain a temporary dirname from %s" % self.base_dir
+        )
 
     def __exit__(self, *args):
         if self.dirname is not None:
             DeleteDirectory(self.dirname, skip_on_error=True)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateTemporaryFile
-#===================================================================================================
+# ===================================================================================================
 class CreateTemporaryFile(object):
-    '''
+    """
     Context manager to create a temporary file and remove if at the context end.
 
     :ivar unicode filename:
         Name of the created file
-    '''
+    """
+
     def __init__(
         self,
         contents,
         eol_style=EOL_STYLE_NATIVE,
         encoding=None,
-        suffix='',
-        prefix='tmp',
+        suffix="",
+        prefix="tmp",
         base_dir=None,
-        maximum_attempts=100):
-        '''
+        maximum_attempts=100,
+    ):
+        """
         :param contents: .. seealso:: CreateFile
         :param eol_style: .. seealso:: CreateFile
         :param encoding: .. seealso:: CreateFile
@@ -1275,7 +1339,7 @@ class CreateTemporaryFile(object):
 
         :param int maximum_attemps:
             The maximum number of attempts to obtain the temp file name.
-        '''
+        """
 
         import tempfile
 
@@ -1289,16 +1353,17 @@ class CreateTemporaryFile(object):
 
         self.filename = None
 
-
     def __enter__(self):
-        '''
+        """
         :return unicode:
             The path to the created temp file.
-        '''
+        """
         from ._exceptions import FileAlreadyExistsError
 
         for random_component in IterHashes(iterator_size=self.maximum_attempts):
-            filename = os.path.join(self.base_dir, self.prefix + random_component + self.suffix)
+            filename = os.path.join(
+                self.base_dir, self.prefix + random_component + self.suffix
+            )
 
             try:
                 CreateFile(
@@ -1313,20 +1378,20 @@ class CreateTemporaryFile(object):
             except FileAlreadyExistsError:
                 pass
 
-        raise RuntimeError('It was not possible to obtain a temporary filename in "%s"' % self.base_dir)
-
+        raise RuntimeError(
+            'It was not possible to obtain a temporary filename in "%s"' % self.base_dir
+        )
 
     def __exit__(self, *args):
         if self.filename is not None:
             DeleteFile(self.filename)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # DeleteDirectory
-#===================================================================================================
+# ===================================================================================================
 def DeleteDirectory(directory, skip_on_error=False):
-    '''
+    """
     Deletes a directory.
 
     :param unicode directory:
@@ -1337,17 +1402,18 @@ def DeleteDirectory(directory, skip_on_error=False):
 
     :raises NotImplementedForRemotePathError:
         If trying to delete a remote directory.
-    '''
+    """
     _AssertIsLocal(directory)
 
     import shutil
+
     def OnError(fn, path, excinfo):
-        '''
+        """
         Remove the read-only flag and try to remove again.
         On Windows, rmtree fails when trying to remove a read-only file. This fix it!
         Another case: Read-only directories return True in os.access test. It seems that read-only
         directories has it own flag (looking at the property windows on Explorer).
-        '''
+        """
         if IsLink(path):
             return
 
@@ -1356,6 +1422,7 @@ def DeleteDirectory(directory, skip_on_error=False):
 
         # Make the file WRITEABLE and executes the original delete function (osfunc)
         import stat
+
         os.chmod(path, stat.S_IWRITE)
         fn(path)
 
@@ -1364,6 +1431,7 @@ def DeleteDirectory(directory, skip_on_error=False):
             if skip_on_error:
                 return
             from ._exceptions import DirectoryNotFoundError
+
             raise DirectoryNotFoundError(directory)
         shutil.rmtree(directory, onerror=OnError)
     except:
@@ -1371,12 +1439,11 @@ def DeleteDirectory(directory, skip_on_error=False):
             raise  # Raise only if we are not skipping on error
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # GetMTime
-#===================================================================================================
+# ===================================================================================================
 def GetMTime(path):
-    '''
+    """
     :param unicode path:
         Path to file or directory
 
@@ -1391,7 +1458,7 @@ def GetMTime(path):
         with resolutions higher than a second.
 
         http://stackoverflow.com/questions/2428556/os-path-getmtime-doesnt-return-fraction-of-a-second
-    '''
+    """
     _AssertIsLocal(path)
 
     if os.path.isdir(path):
@@ -1403,12 +1470,11 @@ def GetMTime(path):
     return os.path.getmtime(path)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # ListMappedNetworkDrives
-#===================================================================================================
+# ===================================================================================================
 def ListMappedNetworkDrives():
-    '''
+    """
     On Windows, returns a list of mapped network drives
 
     :return: tuple(string, string, bool)
@@ -1416,39 +1482,39 @@ def ListMappedNetworkDrives():
             - the local drive
             - the remote path-
             - True if the mapping is enabled (warning: not reliable)
-    '''
-    if sys.platform != 'win32':
+    """
+    if sys.platform != "win32":
         raise NotImplementedError
     drives_list = []
-    netuse = _CallWindowsNetCommand(['use'])
+    netuse = _CallWindowsNetCommand(["use"])
     for line in netuse.split(EOL_STYLE_WINDOWS):
         match = re.match("(\w*)\s+(\w:)\s+(.+)", line.rstrip())
         if match:
-            drives_list.append((match.group(2), match.group(3), match.group(1) == 'OK'))
+            drives_list.append((match.group(2), match.group(3), match.group(1) == "OK"))
     return drives_list
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # DeleteLink
-#===================================================================================================
+# ===================================================================================================
 def DeleteLink(path):
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         os.unlink(path)
     else:
-        from ._easyfs_win32 import RemoveDirectory as _RemoveDirectory, DeleteFile as _DeleteFile
+        from ._easyfs_win32 import DeleteFile as _DeleteFile
+        from ._easyfs_win32 import RemoveDirectory as _RemoveDirectory
+
         if IsDir(path):
             _RemoveDirectory(path)
         else:
             _DeleteFile(path)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CreateLink
-#===================================================================================================
+# ===================================================================================================
 def CreateLink(target_path, link_path, override=True):
-    '''
+    """
     Create a symbolic link at `link_path` pointing to `target_path`.
 
     :param unicode target_path:
@@ -1459,7 +1525,7 @@ def CreateLink(target_path, link_path, override=True):
 
     :param bool override:
         If True and `link_path` already exists as a link, that link is overridden.
-    '''
+    """
     _AssertIsLocal(target_path)
     _AssertIsLocal(link_path)
 
@@ -1471,52 +1537,57 @@ def CreateLink(target_path, link_path, override=True):
     if dirname:
         CreateDirectory(dirname)
 
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         return os.symlink(target_path, link_path)  # @UndefinedVariable
     else:
-        #import ntfsutils.junction
-        #return ntfsutils.junction.create(target_path, link_path)
+        # import ntfsutils.junction
+        # return ntfsutils.junction.create(target_path, link_path)
 
         import jaraco.windows.filesystem
+
         return jaraco.windows.filesystem.symlink(target_path, link_path)
 
         from ._easyfs_win32 import CreateSymbolicLink
+
         try:
             dw_flags = 0
             if target_path and os.path.isdir(target_path):
                 dw_flags = 1
             return CreateSymbolicLink(target_path, link_path, dw_flags)
         except Exception as e:
-            raise(e, 'Creating link "%(link_path)s" pointing to "%(target_path)s"' % locals())
+            raise (
+                e,
+                'Creating link "%(link_path)s" pointing to "%(target_path)s"'
+                % locals(),
+            )
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # IsLink
-#===================================================================================================
+# ===================================================================================================
 def IsLink(path):
-    '''
+    """
     :param unicode path:
         Path being tested
 
     :returns bool:
         True if `path` is a link
-    '''
+    """
     _AssertIsLocal(path)
 
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         return os.path.islink(path)
 
     import jaraco.windows.filesystem
+
     return jaraco.windows.filesystem.islink(path)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # ReadLink
-#===================================================================================================
+# ===================================================================================================
 def ReadLink(path):
-    '''
+    """
     Read the target of the symbolic link at `path`.
 
     :param unicode path:
@@ -1524,28 +1595,30 @@ def ReadLink(path):
 
     :returns unicode:
         Target of a symbolic link
-    '''
+    """
     _AssertIsLocal(path)
 
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         return os.readlink(path)  # @UndefinedVariable
 
     if not IsLink(path):
         from ._exceptions import FileNotFoundError
+
         raise FileNotFoundError(path)
 
     import jaraco.windows.filesystem
+
     result = jaraco.windows.filesystem.readlink(path)
-    if '\\??\\' in result:
-        result = result.split('\\??\\')[1]
+    if "\\??\\" in result:
+        result = result.split("\\??\\")[1]
     return result
 
 
-#===================================================================================================
+# ===================================================================================================
 # Internal functions
-#===================================================================================================
+# ===================================================================================================
 def _UrlIsLocal(directory_url):
-    '''
+    """
     :param ParseResult directory_url:
         A parsed url as returned by urlparse.urlparse.
 
@@ -1556,12 +1629,12 @@ def _UrlIsLocal(directory_url):
     .. note:: The "directory_url.scheme" is the drive letter for a local path on Windows and an empty string
     for a local path on Linux. The other possible values are "http", "ftp", etc. So, checking if
     the length is less than 2 characters long checks that the url is local.
-    '''
+    """
     return len(directory_url.scheme) < 2
 
 
 def _AssertIsLocal(path):
-    '''
+    """
     Checks if a given path is local, raise an exception if not.
 
     This is used in filesystem functions that do not support remote operations yet.
@@ -1570,58 +1643,66 @@ def _AssertIsLocal(path):
 
     :raises NotImplementedForRemotePathError:
         If the given path is not local
-    '''
+    """
     from six.moves.urllib.parse import urlparse
+
     if not _UrlIsLocal(urlparse(path)):
         from ._exceptions import NotImplementedForRemotePathError
+
         raise NotImplementedForRemotePathError
 
 
 def _HandleContentsEol(contents, eol_style):
-    '''
+    """
     Replaces eol on each line by the given eol_style.
 
     :param unicode contents:
     :type eol_style: EOL_STYLE_XXX constant
     :param eol_style:
-    '''
+    """
     if eol_style == EOL_STYLE_NONE:
         return contents
 
     if eol_style == EOL_STYLE_UNIX:
-        return contents.replace('\r\n', eol_style).replace('\r', eol_style)
+        return contents.replace("\r\n", eol_style).replace("\r", eol_style)
 
     if eol_style == EOL_STYLE_MAC:
-        return contents.replace('\r\n', eol_style).replace('\n', eol_style)
+        return contents.replace("\r\n", eol_style).replace("\n", eol_style)
 
     if eol_style == EOL_STYLE_WINDOWS:
-        return contents.replace('\r\n', '\n').replace('\r', '\n').replace('\n', EOL_STYLE_WINDOWS)
+        return (
+            contents.replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", EOL_STYLE_WINDOWS)
+        )
 
-    raise ValueError('Unexpected eol style: %r' % (eol_style,))
+    raise ValueError("Unexpected eol style: %r" % (eol_style,))
 
 
 def _CallWindowsNetCommand(parameters):
-    '''
+    """
     Call Windows NET command, used to acquire/configure network services settings.
 
     :param parameters: list of command line parameters
 
     :return: command output
-    '''
+    """
     import subprocess
-    popen = subprocess.Popen(["net"] + parameters, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    popen = subprocess.Popen(
+        ["net"] + parameters, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     stdoutdata, stderrdata = popen.communicate()
     if stderrdata:
         raise OSError("Failed on call net.exe: %s" % stderrdata)
     return stdoutdata
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # ExtendedPathMask
-#===================================================================================================
+# ===================================================================================================
 class ExtendedPathMask(object):
-    '''
+    """
     This class is a place-holder for functions that handle the extended path mask.
 
     Extended Path Mask
@@ -1646,12 +1727,11 @@ class ExtendedPathMask(object):
                 *.zip;*.rar
                 units.txt;*.ini
                 *.txt;!*-002.txt
-    '''
-
+    """
 
     @classmethod
     def Split(cls, extended_path_mask):
-        '''
+        """
         Splits the given path into their components: recursive, dirname, in_filters and out_filters
 
         :param str: extended_path_mask:
@@ -1665,52 +1745,51 @@ class ExtendedPathMask(object):
             - The actual path
             - A list of masks to include
             - A list of masks to exclude
-        '''
+        """
         import os.path
-        r_tree_recurse = extended_path_mask[0] in '+-'
-        r_flat_recurse = extended_path_mask[0] in '-'
+
+        r_tree_recurse = extended_path_mask[0] in "+-"
+        r_flat_recurse = extended_path_mask[0] in "-"
 
         r_dirname, r_filters = os.path.split(extended_path_mask)
         if r_tree_recurse:
             r_dirname = r_dirname[1:]
 
-        filters = r_filters.split(';')
-        r_in_filters = [i for i in filters if not i.startswith('!')]
-        r_out_filters = [i[1:] for i in filters if i.startswith('!')]
+        filters = r_filters.split(";")
+        r_in_filters = [i for i in filters if not i.startswith("!")]
+        r_out_filters = [i[1:] for i in filters if i.startswith("!")]
 
         return r_tree_recurse, r_flat_recurse, r_dirname, r_in_filters, r_out_filters
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # CheckForUpdate
-#===================================================================================================
+# ===================================================================================================
 def CheckForUpdate(source, target):
-    '''
+    """
     Checks if the given target filename should be re-generated because the source has changed.
     :param source: the source filename.
     :param target: the target filename.
     :return bool:
         True if the target is out-dated, False otherwise.
-    '''
-    return \
-        not os.path.isfile(target) or \
-        os.path.getmtime(source) > os.path.getmtime(target)
+    """
+    return not os.path.isfile(target) or os.path.getmtime(source) > os.path.getmtime(
+        target
+    )
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # MatchMasks
-#===================================================================================================
+# ===================================================================================================
 def MatchMasks(filename, masks):
-    '''
+    """
     Verifies if a filename match with given patterns.
 
     :param str filename: The filename to match.
     :param list(str) masks: The patterns to search in the filename.
     :return bool:
         True if the filename has matched with one pattern, False otherwise.
-    '''
+    """
     import fnmatch
 
     if not isinstance(masks, (list, tuple)):
@@ -1722,12 +1801,18 @@ def MatchMasks(filename, masks):
     return False
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # FindFiles
-#===================================================================================================
-def FindFiles(dir_, in_filters=None, out_filters=None, recursive=True, include_root_dir=True, standard_paths=False):
-    '''
+# ===================================================================================================
+def FindFiles(
+    dir_,
+    in_filters=None,
+    out_filters=None,
+    recursive=True,
+    include_root_dir=True,
+    standard_paths=False,
+):
+    """
     Searches for files in a given directory that match with the given patterns.
 
     :param str dir_: the directory root, to search the files.
@@ -1738,10 +1823,10 @@ def FindFiles(dir_, in_filters=None, out_filters=None, recursive=True, include_r
     :param bool standard_paths: if True, always uses unix path separators "/"
     :return list(str):
         A list of strings with the files that matched (with the full path in the filesystem).
-    '''
+    """
     # all files
     if in_filters is None:
-        in_filters = ['*']
+        in_filters = ["*"]
 
     if out_filters is None:
         out_filters = []
@@ -1757,7 +1842,9 @@ def FindFiles(dir_, in_filters=None, out_filters=None, recursive=True, include_r
                 directories.remove(i_directory)
 
         for filename in directories + filenames:
-            if MatchMasks(filename, in_filters) and not MatchMasks(filename, out_filters):
+            if MatchMasks(filename, in_filters) and not MatchMasks(
+                filename, out_filters
+            ):
                 result.append(os.path.join(dir_root, filename))
 
         if not recursive:
@@ -1774,19 +1861,18 @@ def FindFiles(dir_, in_filters=None, out_filters=None, recursive=True, include_r
     return result
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # ExpandUser
-#===================================================================================================
+# ===================================================================================================
 def ExpandUser(path):
-    '''
+    """
     os.path.expanduser wrapper, necessary because it cannot handle unicode strings properly.
 
     This is not necessary in Python 3.
 
     :param path:
         .. seealso:: os.path.expanduser
-    '''
+    """
     if six.PY2:
         encoding = sys.getfilesystemencoding()
         path = path.encode(encoding)
@@ -1796,12 +1882,11 @@ def ExpandUser(path):
     return result
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # DumpDirHashToStringIO
-#===================================================================================================
-def DumpDirHashToStringIO(directory, stringio, base='', exclude=None, include=None):
-    '''
+# ===================================================================================================
+def DumpDirHashToStringIO(directory, stringio, base="", exclude=None, include=None):
+    """
     Helper to iterate over the files in a directory putting those in the passed StringIO in ini
     format.
 
@@ -1819,7 +1904,7 @@ def DumpDirHashToStringIO(directory, stringio, base='', exclude=None, include=No
 
     :param unicode include:
         Pattern to match files to include in the hashing. E.g.: *.zip
-    '''
+    """
     import fnmatch
     import os
 
@@ -1836,17 +1921,16 @@ def DumpDirHashToStringIO(directory, stringio, base='', exclude=None, include=No
 
         md5 = Md5Hex(fullname)
         if base:
-            stringio.write('%s/%s=%s\n' % (base, filename, md5))
+            stringio.write("%s/%s=%s\n" % (base, filename, md5))
         else:
-            stringio.write('%s=%s\n' % (filename, md5))
+            stringio.write("%s=%s\n" % (filename, md5))
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # Md5Hex
-#===================================================================================================
+# ===================================================================================================
 def Md5Hex(filename=None, contents=None):
-    '''
+    """
     :param unicode filename:
         The file from which the md5 should be calculated. If the filename is given, the contents
         should NOT be given.
@@ -1858,13 +1942,14 @@ def Md5Hex(filename=None, contents=None):
     :rtype: unicode
     :returns:
         Returns a string with the hex digest of the stream.
-    '''
-    import io
+    """
     import hashlib
+    import io
+
     md5 = hashlib.md5()
 
     if filename:
-        stream = io.open(filename, 'rb')
+        stream = io.open(filename, "rb")
         try:
             while True:
                 data = stream.read(md5.block_size * 128)
@@ -1880,28 +1965,27 @@ def Md5Hex(filename=None, contents=None):
     return six.text_type(md5.hexdigest())
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # GetRandomHash
-#===================================================================================================
+# ===================================================================================================
 def GetRandomHash(length=7):
-    '''
+    """
     :param length:
         Length of hash returned.
 
     :return unicode:
         A random hexadecimal hash of the given length
-    '''
+    """
     import random
-    return ('%0' + six.text_type(length) + 'x') % random.randrange(16 ** length)
+
+    return ("%0" + six.text_type(length) + "x") % random.randrange(16**length)
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # IterHashes
-#===================================================================================================
+# ===================================================================================================
 def IterHashes(iterator_size, hash_length=7):
-    '''
+    """
     Iterator for random hexadecimal hashes
 
     :param iterator_size:
@@ -1912,9 +1996,9 @@ def IterHashes(iterator_size, hash_length=7):
         Size of each hash returned.
 
     :return generator(unicode):
-    '''
+    """
     if not isinstance(iterator_size, int):
-        raise TypeError('iterator_size must be integer.')
+        raise TypeError("iterator_size must be integer.")
 
     count = 0
     while count != iterator_size:
@@ -1922,12 +2006,12 @@ def IterHashes(iterator_size, hash_length=7):
         yield GetRandomHash(hash_length)
 
 
-#===================================================================================================
+# ===================================================================================================
 # PushPopItem
-#===================================================================================================
+# ===================================================================================================
 @contextlib.contextmanager
 def PushPopItem(obj, key, value):
-    '''
+    """
     A context manager to replace and restore a value using a getter and setter.
 
     :param object obj: The object to replace/restore.
@@ -1939,7 +2023,7 @@ def PushPopItem(obj, key, value):
       with PushPop2(sys.modules, 'alpha', None):
         pytest.raises(ImportError):
           import alpha
-    '''
+    """
     if key in obj:
         old_value = obj[key]
         obj[key] = value
@@ -1950,7 +2034,6 @@ def PushPopItem(obj, key, value):
         obj[key] = value
         yield value
         del obj[key]
-
 
 
 # class Kernel(object):

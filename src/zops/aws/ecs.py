@@ -1,4 +1,5 @@
 import os
+
 import botocore
 
 
@@ -11,20 +12,13 @@ class EcsCluster:
     @classmethod
     def list(cls, cluster, region):
         ecs_client = cluster.ecs_client(region=region)
-        clusters = ecs_client.list_clusters()['clusterArns']
-        result = ecs_client.describe_clusters(clusters=clusters)['clusters']
-        return [
-            cls(ecs_client, i['clusterName'])
-            for i in result
-        ]
+        clusters = ecs_client.list_clusters()["clusterArns"]
+        result = ecs_client.describe_clusters(clusters=clusters)["clusters"]
+        return [cls(ecs_client, i["clusterName"]) for i in result]
 
     def list_services(self):
-        result = self.__ecs_client.list_services(cluster=self.name)[
-            "serviceArns"]
-        return [
-            EcsService(self.__ecs_client, i)
-            for i in result
-        ]
+        result = self.__ecs_client.list_services(cluster=self.name)["serviceArns"]
+        return [EcsService(self.__ecs_client, i) for i in result]
 
 
 class EcsService:

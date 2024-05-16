@@ -1,7 +1,8 @@
 def test_ordereddict():
-    from zerotk.lib.yaml import yaml_load
-    from zerotk.lib.text import dedent
     from collections import OrderedDict
+
+    from zerotk.lib.text import dedent
+    from zerotk.lib.yaml import yaml_load
 
     contents = yaml_load(
         dedent(
@@ -22,9 +23,11 @@ def test_ordereddict():
 
 
 def test_duplicate_keys():
-    from zerotk.lib.yaml import yaml_load, DuplicateKeyError
-    from zerotk.lib.text import dedent
     import pytest
+
+    from zerotk.lib.text import dedent
+    from zerotk.lib.yaml import DuplicateKeyError
+    from zerotk.lib.yaml import yaml_load
 
     with pytest.raises(DuplicateKeyError):
         yaml_load(

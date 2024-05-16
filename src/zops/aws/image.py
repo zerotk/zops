@@ -106,9 +106,7 @@ class Image:
             )
             return
 
-        session = boto3.Session(
-            profile_name=self.profile, region_name=self.region
-        )
+        session = boto3.Session(profile_name=self.profile, region_name=self.region)
         ec2 = session.client("ec2")
         ec2.modify_image_attribute(
             ImageId=self.image_id,
@@ -123,9 +121,7 @@ class Image:
             print(f"$ aws ec2 deregister-image --image-id={self.image_id}")
             return
 
-        session = boto3.Session(
-            profile_name=self.profile, region_name=self.region
-        )
+        session = boto3.Session(profile_name=self.profile, region_name=self.region)
         ec2 = session.client("ec2")
         ec2.deregister_image(ImageId=self.image_id)
 
@@ -147,9 +143,7 @@ class Image:
 
         self.msg("TAG")
 
-        session = boto3.Session(
-            profile_name=self.profile, region_name=self.region
-        )
+        session = boto3.Session(profile_name=self.profile, region_name=self.region)
         ec2_client = session.client("ec2")
         tag_name, tag_version = self.full_name.split("-")[2:4]
         ec2_client.create_tags(

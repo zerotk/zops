@@ -9,6 +9,7 @@ def main():
     AWS-related commands (including ec2, aws, asg).
     """
 
+
 main.add_command(commands.ami_build)
 main.add_command(commands.ami_deregister)
 main.add_command(commands.ami_list)

@@ -1,7 +1,9 @@
 def assert_file_contents(filename, expected):
-    from zerotk.text import dedent
-    from datadiff.tools import assert_equal
     import os
+
+    from datadiff.tools import assert_equal
+
+    from zerotk.text import dedent
 
     assert os.path.isfile(filename), "{}: File does not exists.".format(filename)
     obtained = open(filename, "r").read()

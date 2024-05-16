@@ -1,13 +1,15 @@
-import attrs
 import pathlib
-from zz.services.filesystem import FileSystem
+
+import attrs
+
 from zz.services.console import Console
+from zz.services.filesystem import FileSystem
 
 
 @attrs.define
 class TerraformPlanner:
 
-    workdir:FileSystem.Path = FileSystem.Path.cwd()
+    workdir: FileSystem.Path = FileSystem.Path.cwd()
     filesystem: attrs.field = FileSystem.singleton()
     console: attrs.field = Console.singleton()
 
@@ -18,7 +20,13 @@ class TerraformPlanner:
         "replace": "!",
     }
 
-    def run(self, deployment:str, workspace:str = None, init:bool=True, plan:bool=True):
+    def run(
+        self,
+        deployment: str,
+        workspace: str = None,
+        init: bool = True,
+        plan: bool = True,
+    ):
         tfplan_bin = self.filesystem.Path(f"./.terraform/{deployment}.tfplan.bin")
         tfplan_json = self.filesystem.Path(f"./.terraform/{deployment}.tfplan.json")
         var_file = f"tfvars/{deployment}.tfvars"
@@ -28,39 +36,56 @@ class TerraformPlanner:
         self.console.title("Initializing terraform", verbosity=1)
         if init:
             if self.filesystem.Path("./bin/init").exists():
-                self.console.item(f"Using ./bin/init", indent=1, verbosity=1)
+                self.console.item("Using ./bin/init", indent=1, verbosity=1)
                 self.filesystem.run("./bin/init")
             else:
-                self.console.item(f"Using terraform", indent=1, verbosity=1)
+                self.console.item("Using terraform", indent=1, verbosity=1)
                 self.filesystem.run("terraform init")
         else:
-            self.console.item(f"Skipping (Use --init option to run init)", indent=1, verbosity=1)
-
+            self.console.item(
+                "Skipping (Use --init option to run init)", indent=1, verbosity=1
+            )
 
         config = TerraformConfig(self.workdir)
 
-        self.console.title(f"Generating terraform plan binary file: {tfplan_json}", verbosity=1)
+        self.console.title(
+            f"Generating terraform plan binary file: {tfplan_json}", verbosity=1
+        )
         if plan:
             if self.filesystem.Path("./bin/plan").exists():
-                self.console.title(f"* Using ./bin/plan", verbosity=1)
-                cmd_line =f"./bin/plan {deployment} -out {tfplan_bin}"
+                self.console.title("* Using ./bin/plan", verbosity=1)
+                cmd_line = f"./bin/plan {deployment} -out {tfplan_bin}"
             else:
-                self.console.item(f"Selecting workspace {workspace}", indent=1, verbosity=1)
+                self.console.item(
+                    f"Selecting workspace {workspace}", indent=1, verbosity=1
+                )
                 self.filesystem.run(f"terraform workspace select {workspace}")
 
-                cmd_line =f"terraform plan -out {tfplan_bin}"
+                cmd_line = f"terraform plan -out {tfplan_bin}"
                 if FileSystem.Path(var_file).exists():
-                    self.console.item(f"Found terraform variables file: {var_file}", indent=1, verbosity=1)
+                    self.console.item(
+                        f"Found terraform variables file: {var_file}",
+                        indent=1,
+                        verbosity=1,
+                    )
                     cmd_line += f" -var-file {var_file}"
             self.filesystem.run(cmd_line)
 
-            self.console.title(f"Generating terraform plan json file: {tfplan_json}", verbosity=1)
-            completed_process = self.filesystem.run(f"terraform show -json {tfplan_bin}")
+            self.console.title(
+                f"Generating terraform plan json file: {tfplan_json}", verbosity=1
+            )
+            completed_process = self.filesystem.run(
+                f"terraform show -json {tfplan_bin}"
+            )
             tfplan_json.write_text(completed_process.stdout.decode("UTF-8"))
         else:
-            self.console.item(f"Skipping (Use --plan option to run plan)", indent=1, verbosity=1)
+            self.console.item(
+                f"Skipping (Use --plan option to run plan)", indent=1, verbosity=1
+            )
 
-        self.console.title(f"Reading terraform plan json file: {tfplan_json}", verbosity=1)
+        self.console.title(
+            f"Reading terraform plan json file: {tfplan_json}", verbosity=1
+        )
         changes = self.filesystem.read_json(tfplan_json).resource_changes
         output = {}
         for i_change in changes:
@@ -84,7 +109,11 @@ class TerraformPlanner:
     def _get_change_format(self, filename: str, change: str):
         r_format = dict(fg="white")
         r_comment = ""
-        if change.startswith("-") or change.startswith("+/-") or change.startswith("-/+"):
+        if (
+            change.startswith("-")
+            or change.startswith("+/-")
+            or change.startswith("-/+")
+        ):
             r_format = dict(fg="red")
         elif change.startswith("+"):
             r_format = dict(fg="green")
@@ -140,14 +169,15 @@ class TerraformConfig:
         addr = re.sub(r"\[.*?\]", "", addr)
         return self.resources_map().get(addr, "?")
 
-
     def _terraform_config_inspect(self, directory):
         """
         Return a map between resources names and their filenames in the given project.
         """
         r = self.filesystem.run(f"terraform-config-inspect --json {directory}")
         terraform_configuration = r.stdout.decode("UTF-8")
-        terraform_configuration = self.filesystem.read_json_string(terraform_configuration)
+        terraform_configuration = self.filesystem.read_json_string(
+            terraform_configuration
+        )
 
         if r.returncode != 0:
             diag = terraform_configuration.diagnostics[0]

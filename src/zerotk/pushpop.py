@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
+
 import contextlib
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # PushPop
-#===================================================================================================
+# ===================================================================================================
 @contextlib.contextmanager
 def PushPopAttr(obj, name, value):
-    '''
+    """
     A context manager to replace and restore a variable/attribute.
 
     :param object obj: The object to replace/restore.
@@ -20,7 +20,7 @@ def PushPopAttr(obj, name, value):
       with PushPop(sys, 'stdout', StringIO()) as output:
         print "Hello, world!"
         assert output.gettext() == "Hello, world!"
-    '''
+    """
     old_value = getattr(obj, name)
     setattr(obj, name, value)
     yield value
@@ -31,13 +31,12 @@ def PushPopAttr(obj, name, value):
 PushPop = PushPopAttr
 
 
-
-#===================================================================================================
+# ===================================================================================================
 # PushPopItem
-#===================================================================================================
+# ===================================================================================================
 @contextlib.contextmanager
 def PushPopItem(obj, key, value):
-    '''
+    """
     A context manager to replace and restore a value using a getter and setter.
 
     :param object obj: The object to replace/restore.
@@ -49,7 +48,7 @@ def PushPopItem(obj, key, value):
       with PushPop2(sys.modules, 'alpha', None):
         pytest.raises(ImportError):
           import alpha
-    '''
+    """
     if key in obj:
         old_value = obj[key]
         obj[key] = value

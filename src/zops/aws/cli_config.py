@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import yaml
 
@@ -10,15 +10,15 @@ from zops.aws.cluster import Cluster
 
 def _config_filename(filename, app_name):
     result = (
-        Path(
-            os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-        )
+        Path(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")))
         / app_name
         / filename
     )
     print(f"ZOPS_AWS_CONFIG_FILE: {result}")
     if not result.is_file():
-        print("ZOPS_AWS_CONFIG_FILE: File not found. Generating new configuration file.")
+        print(
+            "ZOPS_AWS_CONFIG_FILE: File not found. Generating new configuration file."
+        )
         result.parent.mkdir(parents=True, exist_ok=True)
         source_config = Path(__file__).parent / filename
         shutil.copy(source_config, result)

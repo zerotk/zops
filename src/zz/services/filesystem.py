@@ -26,8 +26,8 @@ class FileSystem:
         return result
 
     def run(self, cmd_line: str):
-        import subprocess
         import shlex
+        import subprocess
 
         return subprocess.run(
             shlex.split(cmd_line),
@@ -47,20 +47,23 @@ class FileSystem:
     @classmethod
     def read_yaml(cls, filename: Path) -> Dict:
         import yaml
-        with open(filename, 'r') as iss:
+
+        with open(filename, "r") as iss:
             return yaml.safe_load(iss)
 
     @classmethod
     def read_json(cls, filename: Path) -> Dict:
         import json
+
         from addict import Dict as AttrDict
 
-        with open(filename, 'r') as iss:
+        with open(filename, "r") as iss:
             return json.load(iss, object_hook=AttrDict)
 
     @classmethod
     def read_json_string(cls, contents: str) -> Dict:
         import json
+
         from addict import Dict as AttrDict
 
         return json.loads(contents, object_hook=AttrDict)

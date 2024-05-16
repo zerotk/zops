@@ -1,9 +1,13 @@
 import os
 import subprocess
 from logging import getLogger
-from typing import IO, Any, Dict, cast
+from typing import IO
+from typing import Any
+from typing import Dict
+from typing import cast
 
 from .exceptions import TerraformRuntimeError
+
 
 logger = getLogger(__name__)
 
@@ -23,7 +27,9 @@ class TerraformRun:
     cwd: str = os.getcwd()
     env: Dict[str, str] = {}
 
-    def _subprocess_run(self, args, raise_exception_on_failure=False, **kwargs) -> ProcessResults:
+    def _subprocess_run(
+        self, args, raise_exception_on_failure=False, **kwargs
+    ) -> ProcessResults:
         default_kwargs = {
             "cwd": self.cwd,
             "capture_output": True,
@@ -37,7 +43,9 @@ class TerraformRun:
         ret_results = ProcessResults(results.returncode, results.stdout, results.stderr)
 
         if raise_exception_on_failure and not ret_results.successful:
-            error_message = f"An error occurred while running command '{' '.join(args)}'\n"
+            error_message = (
+                f"An error occurred while running command '{' '.join(args)}'\n"
+            )
             error_message += f"returncode: {ret_results.returncode}\n"
             error_message += f"stdout: {ret_results.stdout}\n"
             error_message += f"stderr: {ret_results.stderr}\n"
@@ -45,7 +53,9 @@ class TerraformRun:
 
         return ret_results
 
-    def _subprocess_stream(self, command, error_function=None, output_function=None, **kwargs) -> ProcessResults:
+    def _subprocess_stream(
+        self, command, error_function=None, output_function=None, **kwargs
+    ) -> ProcessResults:
         logger.info(f"Running command '{command}'")
         process = subprocess.Popen(
             command,

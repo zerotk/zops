@@ -1,10 +1,12 @@
 from functools import update_wrapper
 from typing import Any
+
 import click
 import inject
 
 
 # Services
+
 
 class FileSystem:
 
@@ -21,23 +23,19 @@ class TemplateEngine:
 class services:
 
     SERVICES = dict(
-        filesystem = FileSystem(),
-        template_engine = TemplateEngine(),
+        filesystem=FileSystem(),
+        template_engine=TemplateEngine(),
     )
 
     def __init__(self, *services):
-        self._services = {
-            i: j
-            for i, j
-            in self.SERVICES.items()
-            if i in services
-        }
+        self._services = {i: j for i, j in self.SERVICES.items() if i in services}
 
     def __call__(self, f, *args, **kwargs):
         def new_func(*args, **kwargs):
             ctx = click.get_current_context()
             ctx.__dict__.update(self._services)
             return f(ctx, *args, **kwargs)
+
         return update_wrapper(new_func, f)
 
     def __getattr__(self, name: str) -> Any:
@@ -46,11 +44,13 @@ class services:
 
 # Commands
 
+
 @click.group(name="test")
 def main():
     def config(binder):
         binder.bind(FileSystem, services.SERVICES["filesystem"])
         binder.bind(TemplateEngine, services.SERVICES["template_engine"])
+
     inject.configure(config, once=True)
 
 
@@ -64,10 +64,7 @@ def first(ctx):
 
 @main.command("inject")
 @inject.autoparams()
-def inject_function(
-        filesystem: FileSystem,
-        template_engine: TemplateEngine
-    ):
+def inject_function(filesystem: FileSystem, template_engine: TemplateEngine):
     click.echo("""test.second""")
     click.echo(filesystem)
     click.echo(template_engine)
@@ -75,9 +72,11 @@ def inject_function(
 
 # Tests Fixtures
 
+import shlex
+
 import pytest
 from click.testing import CliRunner
-import shlex
+
 
 class MyRunner:
     def __init__(self):
@@ -85,6 +84,7 @@ class MyRunner:
 
     def run(self, command):
         from zz import __main__
+
         result = self.__cli_runner.invoke(__main__.main, shlex.split(command))
         return result
 
@@ -101,8 +101,9 @@ class MyRunner:
 
     @staticmethod
     def assert_text(obtained, expected):
-        from textwrap import dedent
         import difflib
+        from textwrap import dedent
+
         expected = dedent(expected.lstrip("\n"))
         if obtained != expected:
             obtained = obtained.split("\n")
@@ -119,6 +120,7 @@ def runner() -> MyRunner:
 
 # Tests
 
+
 def test_test1(runner):
     runner.test(
         "test first",
@@ -126,8 +128,9 @@ def test_test1(runner):
         test.first
         FileSystem
         TemplateEngine
-        """
+        """,
     )
+
 
 def test_test2(runner):
     runner.test(
@@ -136,5 +139,5 @@ def test_test2(runner):
         test.second
         FileSystem
         TemplateEngine
-        """
+        """,
     )

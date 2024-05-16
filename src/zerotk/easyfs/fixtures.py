@@ -6,42 +6,53 @@ class _EmbedDataFixture(object):
     def __init__(self, request):
         from zerotk.easyfs import StandardizePath
 
-        module_name = request.module.__name__.split('.')[-1]
+        module_name = request.module.__name__.split(".")[-1]
 
         # source directory: same name as the name of the test's module
-        self._source_dir = request.fspath.dirname + '/' + module_name
+        self._source_dir = request.fspath.dirname + "/" + module_name
 
         # data-dir directory: same name as the name of the test's module
-        data_dir_basename = module_name.replace('test_', 'data_')
-        data_dir_basename = data_dir_basename.replace('_test', '_data')
+        data_dir_basename = module_name.replace("test_", "data_")
+        data_dir_basename = data_dir_basename.replace("_test", "_data")
 
-        self._data_dir = StandardizePath(request.fspath.dirname + '/' + data_dir_basename + '-' + request.function.__name__)
+        self._data_dir = StandardizePath(
+            request.fspath.dirname
+            + "/"
+            + data_dir_basename
+            + "-"
+            + request.function.__name__
+        )
 
     def create_data_dir(self):
-        from zerotk.easyfs import CopyDirectory, IsDir, CreateDirectory
+        from zerotk.easyfs import CopyDirectory
+        from zerotk.easyfs import CreateDirectory
+        from zerotk.easyfs import IsDir
+
         if IsDir(self._source_dir):
             CopyDirectory(self._source_dir, self._data_dir, override=False)
         else:
             CreateDirectory(self._data_dir)
 
     def delete_data_dir(self):
-        from zerotk.easyfs import IsDir, DeleteDirectory
+        from zerotk.easyfs import DeleteDirectory
+        from zerotk.easyfs import IsDir
+
         if IsDir(self._data_dir):
             DeleteDirectory(self._data_dir)
 
     def get_data_dir(self):
-        '''
+        """
         :rtype: unicode
         :returns:
             Returns the absolute path to data-directory name to use, standardized by StandardizePath.
 
         @remarks:
             This method triggers the data-directory creation.
-        '''
+        """
         return self._data_dir
 
     def get_filename(self, *parts):
-        '''
+        """
         Returns an absolute filename in the data-directory (standardized by StandardizePath).
 
         @params parts: list(unicode)
@@ -53,18 +64,25 @@ class _EmbedDataFixture(object):
 
         @remarks:
             This method triggers the data-directory creation.
-        '''
+        """
         from zerotk.easyfs import StandardizePath
 
         result = [self._data_dir] + list(parts)
-        result = '/'.join(result)
+        result = "/".join(result)
         return StandardizePath(result)
 
     def __getitem__(self, index):
         return self.get_filename(index)
 
-    def assert_equal_files(self, obtained_fn, expected_fn, fix_callback=lambda x:x, binary=False, encoding=None):
-        '''
+    def assert_equal_files(
+        self,
+        obtained_fn,
+        expected_fn,
+        fix_callback=lambda x: x,
+        binary=False,
+        encoding=None,
+    ):
+        """
         Compare two files contents. If the files differ, show the diff and write a nice HTML
         diff file into the data directory.
 
@@ -89,9 +107,11 @@ class _EmbedDataFixture(object):
 
         :param bool binary:
             .. seealso:: zerotk.easyfs.GetFileContents
-        '''
+        """
         import os
-        from zerotk.easyfs import GetFileContents, GetFileLines
+
+        from zerotk.easyfs import GetFileContents
+        from zerotk.easyfs import GetFileLines
 
         __tracebackhide__ = True
         import io
@@ -108,6 +128,7 @@ class _EmbedDataFixture(object):
 
             # If we didn't find anything, raise an error
             from ._exceptions import MultipleFilesNotFound
+
             raise MultipleFilesNotFound([filename, data_filename])
 
         obtained_fn = FindFile(obtained_fn)
@@ -122,24 +143,29 @@ class _EmbedDataFixture(object):
             expected_lines = GetFileLines(expected_fn, encoding=encoding)
 
             if obtained_lines != expected_lines:
-                html_fn = os.path.splitext(obtained_fn)[0] + '.diff.html'
+                html_fn = os.path.splitext(obtained_fn)[0] + ".diff.html"
                 html_diff = self._generate_html_diff(
-                    expected_fn, expected_lines, obtained_fn, obtained_lines)
-                with io.open(html_fn, 'w') as f:
+                    expected_fn, expected_lines, obtained_fn, obtained_lines
+                )
+                with io.open(html_fn, "w") as f:
                     f.write(html_diff)
 
                 import difflib
-                diff = ['FILES DIFFER:', obtained_fn, expected_fn]
-                diff += ['HTML DIFF: %s' % html_fn]
-                diff += difflib.context_diff(obtained_lines, expected_lines)
-                raise AssertionError('\n'.join(diff) + '\n')
 
-    def _generate_html_diff(self, expected_fn, expected_lines, obtained_fn, obtained_lines):
+                diff = ["FILES DIFFER:", obtained_fn, expected_fn]
+                diff += ["HTML DIFF: %s" % html_fn]
+                diff += difflib.context_diff(obtained_lines, expected_lines)
+                raise AssertionError("\n".join(diff) + "\n")
+
+    def _generate_html_diff(
+        self, expected_fn, expected_lines, obtained_fn, obtained_lines
+    ):
         """
         Returns a nice side-by-side diff of the given files, as a string.
 
         """
         import difflib
+
         differ = difflib.HtmlDiff()
         return differ.make_file(
             fromlines=expected_lines,

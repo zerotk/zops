@@ -1,3 +1,8 @@
+import distutils
+from collections import MutableMapping
+from collections import OrderedDict
+
+
 class TemplateEngine(object):
     """
     Provide an easy and centralized way to change how we expand templates.
@@ -12,7 +17,9 @@ class TemplateEngine(object):
         return cls.__singleton
 
     def expand(self, text, variables, alt_expansion=False):
-        from jinja2 import Environment, Template, StrictUndefined
+        from jinja2 import Environment
+        from jinja2 import StrictUndefined
+        from jinja2 import Template
 
         if alt_expansion:
             kwargs = dict(

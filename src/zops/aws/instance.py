@@ -1,4 +1,5 @@
 import boto3
+
 from .utils import get_resource_attr
 
 
@@ -33,8 +34,7 @@ class Instance:
             "region": self.__region,
         }
         return [
-            extra_keys.get(k_key, False)
-            or get_resource_attr(self.__instance, k_key)
+            extra_keys.get(k_key, False) or get_resource_attr(self.__instance, k_key)
             for k_key in keys
         ]
 

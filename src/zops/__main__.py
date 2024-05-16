@@ -1,9 +1,10 @@
 import click
 
-import zops.aws.cli_commands as aws_commands
-import zops.terraform.cli_commands as tf_commands
 import zops.anatomy.cli_commands as anatomy_commands
+import zops.aws.cli_commands as aws_commands
 import zops.codegen.cli_commands as codegen_commands
+import zops.terraform.cli_commands as tf_commands
+
 
 @click.group()
 @click.pass_context
@@ -11,9 +12,11 @@ def main(ctx):
     ctx.color = True
     pass
 
+
 @main.group()
 def aws():
     pass
+
 
 aws.add_command(aws_commands.ami_build)
 aws.add_command(aws_commands.ami_deregister)
@@ -46,12 +49,14 @@ aws.add_command(aws_commands.sso_autologin)
 def tf():
     pass
 
+
 tf.add_command(tf_commands.tf_plan)
 
 
 @main.group()
 def anatomy():
     pass
+
 
 anatomy.add_command(anatomy_commands.apply)
 
@@ -60,9 +65,10 @@ anatomy.add_command(anatomy_commands.apply)
 def codegen():
     pass
 
+
 codegen.add_command(codegen_commands.codegen_new_apply)
 codegen.add_command(codegen_commands.codegen_apply)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
