@@ -32,11 +32,11 @@ class TemplateEngine(object):
             kwargs = {}
 
         env = Environment(
-            # trim_blocks=True,
-            # lstrip_blocks=True,
+            trim_blocks=True,
+            lstrip_blocks=True,
             keep_trailing_newline=True,
             undefined=StrictUndefined,
-            **kwargs
+            **kwargs,
         )
 
         def is_empty(text_):
@@ -52,7 +52,7 @@ class TemplateEngine(object):
                 result = env.from_string(result, template_class=Template).render(
                     **variables
                 )
-                break
+                # break  # <-- codegen needs this but Anatomy don't.
             return result
 
         env.filters["expandit"] = expandit

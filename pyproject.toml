@@ -23,7 +23,7 @@ zops = "zops.__main__:main"
 zz = "zz.__main__:main"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 click = "^8.1.7"
 attrs = "^23.2.0"
 boto3 = "^1.34.106"
