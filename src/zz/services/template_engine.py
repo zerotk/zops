@@ -1,5 +1,5 @@
 import distutils
-from collections import MutableMapping
+from collections.abc import MutableMapping
 from collections import OrderedDict
 
 

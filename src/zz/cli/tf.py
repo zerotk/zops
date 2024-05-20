@@ -19,7 +19,7 @@ def plan(
     Terraform plan with short summary.
     """
     from zz.services.console import Console
-    from zz.terraform.terraform import TerraformPlanner
+    from zz.terraform import TerraformPlanner
 
     planner = TerraformPlanner(
         console=Console(verbose_level=1 if verbose else 0),
