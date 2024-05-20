@@ -16,7 +16,15 @@ class TemplateEngine(object):
             cls.__singleton = cls()
         return cls.__singleton
 
-    def expand(self, text, variables, alt_expansion=False):
+    @classmethod
+    def run(
+        cls,
+        text,
+        variables,
+        alt_expansion=False,
+        recursive_expansion=False,
+        trim_blocks=False
+    ):
         from jinja2 import Environment
         from jinja2 import StrictUndefined
         from jinja2 import Template
@@ -32,17 +40,12 @@ class TemplateEngine(object):
             kwargs = {}
 
         env = Environment(
-            trim_blocks=True,
-            lstrip_blocks=True,
+            trim_blocks=trim_blocks,
+            lstrip_blocks=trim_blocks,
             keep_trailing_newline=True,
             undefined=StrictUndefined,
             **kwargs,
         )
-
-        def is_empty(text_):
-            return not bool(expandit(text_).strip())
-
-        env.tests["empty"] = is_empty
 
         def expandit(text_):
             before = None
@@ -52,10 +55,16 @@ class TemplateEngine(object):
                 result = env.from_string(result, template_class=Template).render(
                     **variables
                 )
-                # break  # <-- codegen needs this but Anatomy don't.
+                if not recursive_expansion:
+                    break
             return result
 
         env.filters["expandit"] = expandit
+
+        def is_empty(text_):
+            return not bool(expandit(text_).strip())
+
+        env.tests["empty"] = is_empty
 
         def dashcase(text_):
             result = ""
@@ -124,7 +133,8 @@ class TemplateEngine(object):
 
             def merge_hash(a, b):
                 """
-                Recursively merges hash b into a so that keys from b take precedence over keys from a
+                Recursively merges hash b into a so that keys from b take precedence over keys
+                from a.
 
                 NOTE: Copied from ansible.
                 """

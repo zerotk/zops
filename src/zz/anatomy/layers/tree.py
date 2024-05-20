@@ -33,7 +33,9 @@ class AnatomyFile(object):
         :param variables:
         :return:
         """
-        expand = TemplateEngine.singleton().expand
+        import functools
+
+        expand = functools.partial(TemplateEngine.run, recursive_expansion=True, trim_blocks=True)
 
         filename = filename or self.__filename
         filename = os.path.join(directory, filename)
@@ -95,7 +97,9 @@ class AnatomySymlink(object):
         :param variables:
         :return:
         """
-        expand = TemplateEngine.get().expand
+        import functools
+
+        expand = functools.partial(TemplateEngine.run, recursive_expansion=True, trim_blocks=True)
 
         filename = filename or self.__filename
         filename = os.path.join(directory, filename)

@@ -58,7 +58,7 @@ class CodegenEngine:
                         k_filename.replace("__name__", j_name)
                     )
                     self.console.item(str(filename))
-                    contents = self.template_engine.expand(
+                    contents = self.template_engine.run(
                         open(f"{template_dir}/{k_filename}", "r").read(), j_values
                     )
                     _create_file(filename, contents)
