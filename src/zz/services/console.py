@@ -58,8 +58,8 @@ class Console(object):
     def __init__(self, verbose_level: int = 0):
         self._verbose_level = verbose_level
 
-    def title(self, message: str, title_level: int = 1, verbosity: int = 0):
-        prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=0)
+    def title(self, message: str, indent: int = 0, title_level: int = 1, verbosity: int = 0):
+        prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=indent)
         self.secho(prefix + message, fg=self.TITLE_COLOR, verbosity=verbosity)
 
     #     def execution(self, message, verbose=0):
