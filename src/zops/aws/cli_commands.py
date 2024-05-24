@@ -537,7 +537,7 @@ def params_list(cluster, prefix):
         )
         for i_page in parameters_pages:
             for j_parameter in i_page["Parameters"]:
-                result[j_parameter["Name"]] = (
+                result[f"{cluster.name}:{i_region}:{j_parameter['Name']}"] = (
                     j_parameter.get("Value"),
                     j_parameter.get("Type"),
                 )
@@ -647,7 +647,12 @@ def params_del(cluster, names, region):
     cluster = Cluster.get_cluster(cluster)
     region = region or cluster.regions[0]
     ssm = cluster.ssm_resource(region)
-    ssm.delete_parameters(Names=names)
+    for i_name in names:
+        try:
+            ssm.delete_parameter(Name=i_name)
+            click.echo(f"* {i_name}: deleted")
+        except ssm.exceptions.ParameterNotFound:
+            click.echo(f"* {i_name}: parameter not found")
 
 
 @click.command(name="resources.clean")
