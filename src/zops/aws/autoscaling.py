@@ -9,7 +9,7 @@ class AutoScalingGroup:
     PROFILE_MAP = {}
 
     @classmethod
-    def list_groups(cls, asg_seed, region):
+    def list_groups(cls, asg_seed, profile_name, region):
         """
         Returns a list of dictionary representing autoscaling groups with some
         extra information:
@@ -20,10 +20,11 @@ class AutoScalingGroup:
         * start_instance_refresh: A method that starts the instance-refresh.
         """
 
-        profile_name = asg_seed.split("-")
-        profile_name = cls.PROFILE_MAP.get(
-            profile_name[1], cls.PROFILE_MAP.get(profile_name[0], profile_name[0])
-        )
+        if profile_name is None:
+            profile_name = asg_seed.split("-")
+            profile_name = cls.PROFILE_MAP.get(
+                profile_name[1], cls.PROFILE_MAP.get(profile_name[0], profile_name[0])
+            )
         print(f"AWS_PROFILE={profile_name}")
         print(f"AWS_REGION={region}")
         session = boto3.Session(profile_name=profile_name, region_name=region)

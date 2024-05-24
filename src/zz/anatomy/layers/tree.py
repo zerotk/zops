@@ -1,4 +1,3 @@
-import distutils.util
 import os
 from collections import OrderedDict
 from collections.abc import MutableMapping

@@ -459,8 +459,9 @@ Check if your AWS credentials work with:
 
 @click.command(name="asg.list")
 @click.argument("asg_seed")
+@click.option("--profile", type=str, default=None)
 @click.option("--region", default=None)
-def asg_list(asg_seed, region):
+def asg_list(asg_seed, profile, region):
     """
     List ASGs (Auto Scaling Gropus) that matches the given name.
 
@@ -469,7 +470,7 @@ def asg_list(asg_seed, region):
         uh aws asg.list tier3-prod
     """
     load_config()
-    for i_asg in AutoScalingGroup.list_groups(asg_seed, region):
+    for i_asg in AutoScalingGroup.list_groups(asg_seed, profile_name=profile, region=region):
         i_asg.print()
 
 
@@ -495,8 +496,9 @@ def asg_instance_refresh(asg_seed):
 @click.command(name="asg.update")
 @click.argument("asg_seed")
 @click.argument("desired_capacity", type=int)
+@click.option("--profile", type=str, default=None)
 @click.option("--region", default=None)
-def asg_update(asg_seed, desired_capacity, region):
+def asg_update(asg_seed, desired_capacity, profile, region):
     """
     Updates the desired capacity for ASGs.
 
@@ -506,7 +508,7 @@ def asg_update(asg_seed, desired_capacity, region):
     """
     load_config()
 
-    for i_asg in AutoScalingGroup.list_groups(asg_seed, region):
+    for i_asg in AutoScalingGroup.list_groups(asg_seed, profile_name=profile, region=region):
         i_asg.print()
         i_asg.update(
             desired_capacity=desired_capacity,

@@ -1,4 +1,3 @@
-import distutils
 from collections.abc import MutableMapping
 from collections import OrderedDict
 
@@ -113,13 +112,14 @@ class TemplateEngine(object):
         env.filters["pascalcase"] = stringcase.pascalcase
 
         def is_enabled(o):
+            from str2bool import str2bool
             result = o.get("enabled", None)
             if result is None:
                 return True
             result = env.from_string(result, template_class=Template).render(
                 **variables
             )
-            result = bool(distutils.util.strtobool(result))
+            result = bool(str2bool(result))
             return result
 
         env.filters["is_enabled"] = is_enabled
