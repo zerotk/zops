@@ -3,7 +3,8 @@ import attrs
 import sys
 
 
-#=================================================================================================== zerotk.wires
+# =================================================================================================== zerotk.wires
+
 
 class Wires:
     """
@@ -11,15 +12,6 @@ class Wires:
         1. Default usage need no boiler plate;
         2. No global magic. Everthing must be explicit;
     """
-
-#     @classmethod
-#     def field_transformer(cls, class_, fields):
-#         result = []
-#         for i_field in fields:
-#             if isinstance(i_field.default, cls.dependency):
-#                 i_field = i_field.evolve(converter=i_field.default)
-#             result.append(i_field)
-#         return result
 
     class dependency:
 
@@ -53,7 +45,7 @@ class Appliance:
                 debug_params.append(f"+{name}")
             else:
                 debug_params.append(f"-{name}")
-        print(f"DEBUG: class {self.__class__.__name__}({", ".join(debug_params)})")
+        print(f"DEBUG: class {self.__class__.__name__}({', '.join(debug_params)})")
 
         # Collect initialized attributes to pass to this instance fields.
         inheritance_dependencies = {}
@@ -71,3 +63,7 @@ class Appliance:
             if isinstance(value, Wires.dependency):
                 print(f"DEBUG: .{name} = {value}({inheritance_dependencies}).")
                 setattr(self, name, value.create(**inheritance_dependencies))
+
+    def tree(self):
+        result = {}
+        return result
