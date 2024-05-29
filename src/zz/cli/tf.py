@@ -8,25 +8,28 @@ def main():
 
 @main.command(name="plan")
 @click.argument("deployments", nargs=-1)
-# @click.option("--workspace", default=None)
 @click.option("--skip-init", is_flag=True)
 @click.option("--skip-plan", is_flag=True)
 @click.option("--verbose", is_flag=True)
 def plan(
     deployments: list[str],
-    # workspace: str,
     skip_init: bool,
     skip_plan: bool,
     verbose: bool
 ) -> None:
     """
     Terraform plan with short summary.
+
+    Accepts multiple parameters, each parameter with the format:
+
+    [<workdir>:]<deployment>[|<workspace>]
+
+    Eg.:
+      tf plan t3can-stage apps/t3can:t3can-stage apps/t3can:t3can-stage|stage
     """
     from zz.services.console import Console
     from zz.terraform import TerraformPlanner
     import pathlib
-    import contextlib
-
 
     def split_deployment(deployment_seed):
         import re

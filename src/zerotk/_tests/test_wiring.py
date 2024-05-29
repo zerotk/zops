@@ -15,28 +15,10 @@ class Dependency:
     class Requirement:
 
         def __init__(self, **dependencies):
-            self.__dependencies = dependencies
-
-        def initialize(self, obj, fullfilment):
-            if fullfilment is None:
-                print(f"DEBUG: {obj} : Appliances() - This should appear zero or one time.")
-                fullfilment = Dependency.Fullfilment()
-
-            for i_name, i_dep in self.__dependencies.items():
-                app = fullfilment.get(i_name)
-                if app is None:
-                    print(f"DEBUG: {obj} : create dependency")
-                    app = i_dep.create(appliances=fullfilment)
-                    fullfilment.set(i_name, app)
-                else:
-                    print(f"DEBUG: {obj} : reuse dependency")
-                print(f"DEBUG: {obj}.{i_name} = {app}")
-                setattr(obj, i_name, app)
-
-            return fullfilment
+            self.dependencies = dependencies
 
 
-    class Fullfilment:
+    class Appliances:
 
         def __init__(self, **appliances):
             self.__appliances = appliances
@@ -46,6 +28,10 @@ class Dependency:
 
         def set(self, name, app):
             self.__appliances[name] = app
+
+        def tree(self):
+            return {}
+
 
     def __init__(self, class_, *args, **kwargs):
         self._class = class_
@@ -61,21 +47,47 @@ class Dependency:
         return self._class(*self._args, **self._kwargs)
 
 
-class AlphaService:
+class Appliance():
+
+    injector = Dependency.Requirement()
+
+    def __init__(self, appliances=None):
+        self.appliances = self.initialize(appliances)
+
+    def initialize(self, appliances):
+        if appliances is None:
+            print(f"DEBUG: {self} : Appliances() - This should appear zero or one time.")
+            appliances = Dependency.Appliances()
+
+        for i_name, i_dep in self.injector.dependencies.items():
+            app = appliances.get(i_name)
+            if app is None:
+                print(f"DEBUG: {self} : create dependency")
+                app = i_dep.create(appliances=appliances)
+                appliances.set(i_name, app)
+            else:
+                print(f"DEBUG: {self} : reuse dependency")
+            print(f"DEBUG: {self}.{i_name} = {app}")
+            setattr(self, i_name, app)
+
+        return appliances
+
+
+class AlphaService(Appliance):
 
     injector = Dependency.Requirement(
         console=Dependency(ConsoleLogger)
     )
 
     def __init__(self, name, appliances=None):
+        super().__init__(appliances=appliances)
         self.name = name
-        self.appliances = self.injector.initialize(self, appliances)
 
     def run(self):
         self.console.secho(f"Alpha({self.name})")
 
 
-class BravoService:
+class BravoService(Appliance):
 
     injector = Dependency.Requirement(
         console=Dependency(ConsoleLogger),
@@ -83,8 +95,8 @@ class BravoService:
     )
 
     def __init__(self, name, appliances=None):
+        super().__init__(appliances=appliances)
         self.name = name
-        self.appliances = self.injector.initialize(self, appliances)
 
     def run(self):
         self.console.secho(f"Bravo({self.name})")
@@ -100,7 +112,7 @@ def test_1():
 def test_2():
     # Test 2: Overwriting a dependency
     logger = ConsoleLogger()
-    appliances = Dependency.Fullfilment(console=logger)
+    appliances = Dependency.Appliances(console=logger)
     a = AlphaService(appliances=appliances, name="overwriting")
     a.run()
     assert logger.output == "Alpha(overwriting)\n"
@@ -116,7 +128,7 @@ def test_3():
 def test_4():
     # Test 4: Two level overwrite
     logger = ConsoleLogger()
-    appliances = Dependency.Fullfilment(console=logger)
+    appliances = Dependency.Appliances(console=logger)
     b = BravoService(appliances=appliances, name="bravo")
     b.run()
     assert logger.output == "Bravo(bravo)\nAlpha(level_two)\n"
@@ -129,7 +141,7 @@ def test_4():
 def test_print():
     # Test 4: Two level overwrite
     logger = ConsoleLogger()
-    appliances = Dependency.Fullfilment(console=logger)
+    appliances = Dependency.Appliances(console=logger)
     b = BravoService(appliances=appliances, name="bravo")
 
     assert appliances.tree() == {}
