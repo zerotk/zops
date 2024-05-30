@@ -1,4 +1,4 @@
-from zz.services.console import Console
+import attrs
 
 
 class ConsoleLogger:
@@ -22,6 +22,8 @@ class Dependency:
 
         def __init__(self, **appliances):
             self.__appliances = appliances
+            self._tree = []
+            self._name = ["<root>"]
 
         def get(self, name):
             return self.__appliances.get(name)
@@ -29,9 +31,23 @@ class Dependency:
         def set(self, name, app):
             self.__appliances[name] = app
 
-        def tree(self):
-            return {}
+        def _record(self, name, dep):
+            path = ".".join(self._name)
+            self._tree.append(f"{path}.{name}: {dep._class.__name__}")
 
+        def tree(self):
+            return self._tree
+
+        def initialize(self, obj, requirements):
+            for i_name, i_dep in requirements.dependencies.items():
+                self._record(i_name, i_dep)
+                app = self.get(i_name)
+                if app is None:
+                    self._name.append(i_name)
+                    app = i_dep.create(appliances=self)
+                    self._name.pop()
+                    self.set(i_name, app)
+                object.__setattr__(obj, i_name, app)
 
     def __init__(self, class_, *args, **kwargs):
         self._class = class_
@@ -47,56 +63,42 @@ class Dependency:
         return self._class(*self._args, **self._kwargs)
 
 
-class Appliance():
+@attrs.define(kw_only=True, slots=False)
+class Appliance:
 
     injector = Dependency.Requirement()
+    appliances: Dependency.Appliances = None
 
     def __init__(self, appliances=None):
         self.appliances = self.initialize(appliances)
 
-    def initialize(self, appliances):
-        if appliances is None:
-            print(f"DEBUG: {self} : Appliances() - This should appear zero or one time.")
-            appliances = Dependency.Appliances()
-
-        for i_name, i_dep in self.injector.dependencies.items():
-            app = appliances.get(i_name)
-            if app is None:
-                print(f"DEBUG: {self} : create dependency")
-                app = i_dep.create(appliances=appliances)
-                appliances.set(i_name, app)
-            else:
-                print(f"DEBUG: {self} : reuse dependency")
-            print(f"DEBUG: {self}.{i_name} = {app}")
-            setattr(self, i_name, app)
-
-        return appliances
+    def __attrs_post_init__(self):
+        if self.appliances is None:
+            self.appliances = Dependency.Appliances()
+        self.appliances.initialize(self, self.__class__.injector)
 
 
+
+@attrs.define
 class AlphaService(Appliance):
 
     injector = Dependency.Requirement(
         console=Dependency(ConsoleLogger)
     )
-
-    def __init__(self, name, appliances=None):
-        super().__init__(appliances=appliances)
-        self.name = name
+    name: str
 
     def run(self):
         self.console.secho(f"Alpha({self.name})")
 
 
+@attrs.define
 class BravoService(Appliance):
 
     injector = Dependency.Requirement(
         console=Dependency(ConsoleLogger),
         alpha=Dependency(AlphaService, "level_two"),
     )
-
-    def __init__(self, name, appliances=None):
-        super().__init__(appliances=appliances)
-        self.name = name
+    name: str
 
     def run(self):
         self.console.secho(f"Bravo({self.name})")
@@ -105,9 +107,12 @@ class BravoService(Appliance):
 
 def test_1():
     # Test 1: Using the service without any boilder plate
-    a = AlphaService("simplest")
+    a = AlphaService(name="simplest")
     a.run()
     assert a.console.output == "Alpha(simplest)\n"
+    assert a.appliances.tree() == [
+        "<root>.console: ConsoleLogger"
+    ]
 
 def test_2():
     # Test 2: Overwriting a dependency
@@ -118,12 +123,20 @@ def test_2():
     assert logger.output == "Alpha(overwriting)\n"
     assert a.console is logger
     assert a.appliances is appliances
+    assert a.appliances.tree() == [
+        "<root>.console: ConsoleLogger"
+    ]
 
 def test_3():
     # Test 3: Two level no boiler plate
     b = BravoService(name="test3")
     b.run()
     assert b.console.output == "Bravo(test3)\nAlpha(level_two)\n"
+    assert b.appliances.tree() == [
+        "<root>.console: ConsoleLogger",
+        "<root>.alpha: AlphaService",
+        "<root>.alpha.console: ConsoleLogger",
+    ]
 
 def test_4():
     # Test 4: Two level overwrite
@@ -136,30 +149,8 @@ def test_4():
     assert b.appliances is appliances
     assert b.alpha.console is logger
     assert b.alpha.appliances is appliances
-
-
-def test_print():
-    # Test 4: Two level overwrite
-    logger = ConsoleLogger()
-    appliances = Dependency.Appliances(console=logger)
-    b = BravoService(appliances=appliances, name="bravo")
-
-    assert appliances.tree() == {}
-
-# def test():
-#     # Normal use. No boiler plate
-#     # greeter = Greeter()
-#     # greeter.run()
-#
-#     # # Custom use. Tests
-#     logger = ConsoleLogger()
-#     greeter = Greeter(console=logger)
-#     greeter.run()
-#     assert logger.output == zerotk.text.dedent(
-#         """
-#         Getting word 'Hello'
-#         Getting word 'World'
-#         Hello, World!
-#
-#         """
-#     )
+    assert b.appliances.tree() == [
+        "<root>.console: ConsoleLogger",
+        "<root>.alpha: AlphaService",
+        "<root>.alpha.console: ConsoleLogger",
+    ]
