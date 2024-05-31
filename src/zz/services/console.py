@@ -56,7 +56,10 @@ class Console(object):
         return cls()
 
     def __init__(self, verbose_level: int = 0):
+        from collections import OrderedDict
+
         self._verbose_level = verbose_level
+        self._blocks = OrderedDict()
 
     def title(self, message: str, indent: int = 0, title_level: int = 1, verbosity: int = 0):
         prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=indent)
@@ -98,5 +101,26 @@ class Console(object):
             return
 
         message.rstrip("\n")
-
         click.secho(message, fg=fg)
+
+    def create_block(self, block_id, text):
+        assert block_id not in self._blocks
+        text = f"{block_id}: {text}"
+        self._blocks[block_id] = text
+        self.secho(text)
+    
+    def update_block(self, block_id, text):
+        assert block_id in self._blocks
+        text = f"{block_id}: {text}"
+        self._blocks[block_id] = text
+        self._redraw_blocks()
+
+    def clear_blocks(self):
+        self._blocks.clear()
+    
+    def _redraw_blocks(self):
+        block_text = "\n".join(self._blocks.values())
+        block_count = len(self._blocks)
+        print(f"\x1b[{block_count}A", end="")
+        print("\x1b[0J", end="")
+        self.secho(block_text)

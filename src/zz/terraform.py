@@ -5,6 +5,7 @@ import attrs
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 from zerotk.text import dedent
+import asyncio
 
 
 @attrs.define
@@ -12,6 +13,7 @@ class TerraformPlanner:
 
     filesystem: attrs.field = FileSystem.singleton()
     console: attrs.field = Console.singleton()
+    _semaphores: list[asyncio.Semaphore] = []
 
     ACTION_MAP = {
         "update": "~",
@@ -20,36 +22,80 @@ class TerraformPlanner:
         "replace": "!",
     }
 
+    async def run_all(self, deployments_seeds):
+        deployments, workdirs = self._list_deployments(deployments_seeds)
+
+        # Initialize each workdir only once
+        await asyncio.gather(*[
+            self._run_init(i_workdir)
+            for i_workdir in workdirs
+        ])
+        self.console.clear_blocks()
+
+        # Run the report for all deployments
+        self._semaphores = {
+            i: asyncio.Semaphore(1)
+            for i in workdirs
+        }
+        run_list = [
+            self.run(
+                i_workdir,
+                i_deployment,
+                i_workspace,
+                semaphore=self._semaphores[i_workdir],
+            )
+            for i_workdir, i_deployment, i_workspace in deployments
+        ]
+        result = await asyncio.gather(*run_list)
+        return result
+
     async def run(
         self,
         workdir: pathlib.Path,
         deployment: str,
         workspace: str = None,
-        init: bool = True,
-        plan: bool = True,
+        semaphore: asyncio.Semaphore = None,
     ):
         if workspace is None:
             workspace = deployment
 
-        # title = deployment
-        # if not deployment.startswith(workdir.name):
-        #     title = f"{workdir.name}:{deployment}"
-        # self.console.title(title, verbosity=0)
+        title = deployment
+        if not deployment.startswith(workdir.name):
+            title = f"{workdir.name}:{deployment}"
+        self.console.create_block(title, title)
 
-        await self._run_init(workdir)
-        tf_plan = await self._run_plan(workdir, deployment, workspace)
-        changes_report = await self._generate_report(workdir, tf_plan)
-        self._print_report(changes_report)
+        # IDEAS:
+        # - Use semaphore only for the tasks that cannot be executed at the same time,
+        #   namely, the terraform calls
+        self.console.update_block(title, f"waiting for {workdir}")
+        async with semaphore:           
+            self.console.update_block(title, "plan")
+            tf_plan = await self._run_plan(workdir, deployment, workspace)
+        self.console.update_block(title, "report")
+        result = await self._generate_report(workdir, tf_plan)
+        self.console.update_block(title, "finished")
+        return result
+
+    async def _fake_run(self):
+        import random
+        sleep_time = 3 + int(4 * random.random())
+        await asyncio.sleep(sleep_time)
+        return sleep_time
 
     async def _run_init(self, workdir: pathlib.Path) -> None:
+        self.console.create_block(workdir, "init")
+
         bin_init = "bin/init"
 
         if (workdir / bin_init).exists():
             cmd_line = bin_init
         else:
             cmd_line = "terraform init -no-color"
-        _retcode, _stdout = await self.filesystem.run_async(cmd_line, cwd=workdir)
+        retcode, output = await self.filesystem.run_async(cmd_line, cwd=workdir)
+
         # TODO: Store output for future. Show in case of errors.
+        self.console.update_block(workdir, f"init: done")
+        return output
 
     async def _run_plan(self, workdir: pathlib.Path, deployment: str, workspace: str) -> None:
         bin_plan = "bin/plan"
@@ -87,7 +133,7 @@ class TerraformPlanner:
 
         return result
 
-    async def _get_change_format(self, filename: str, change: str):
+    def _get_change_format(self, filename: str, change: str):
         r_format = dict(fg="white")
         r_comment = ""
         if (
@@ -100,18 +146,41 @@ class TerraformPlanner:
             r_format = dict(fg="green")
         return r_format, r_comment
 
-    async def _print_report(self, changes_report):
+    def print_report(self, changes_report):
         self.console.title("Terraform plan summary:", indent=1, verbosity=1)
         if changes_report:
             for i_filename, i_changes in sorted(changes_report.items()):
                 self.console.secho(i_filename)
                 for j_change in i_changes:
-                    format, comment = await self._get_change_format(i_filename, j_change)
+                    format, comment = self._get_change_format(i_filename, j_change)
                     if comment:
                         comment = f"  # {comment}"
                     self.console.secho(f"  {j_change}{comment}", **format)
         else:
             self.console.secho(f"(no changes)")
+
+    @classmethod
+    def split_deployment(cls, deployment_seed: str) -> tuple[pathlib.Path, str, str]:
+        import re
+
+        DEPLOYMENT_SEED_RE = re.compile(
+            "^(?:(?P<workdir>[\w/]+)\:)?(?P<deployment>[\w/-]+)?(?:\|(?P<workspace>[\w]+))?$"
+        )
+        workdir, deployment, workspace = DEPLOYMENT_SEED_RE.match(deployment_seed).groups()
+        if workspace is None:
+            workspace = deployment
+        workdir = pathlib.Path.cwd() if workdir is None else pathlib.Path(workdir)
+        return workdir, deployment, workspace
+
+    @classmethod
+    def _list_deployments(cls, deployments_seeds):
+        r_deployments = []
+        r_workdirs = set()
+        for i_seed in deployments_seeds:
+            workdir, deployment, workspace = cls.split_deployment(i_seed)
+            r_workdirs.add(workdir)
+            r_deployments.append((workdir, deployment, workspace))
+        return r_deployments, r_workdirs
 
 
 class Cached:
