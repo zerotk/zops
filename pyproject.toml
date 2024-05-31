@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "zops"
-version = "2.0.0b1"
+name = "zerotk.zops"
+version = "2.0.0b2"
 description = "Zero Operations Toolbox"
 authors = ["Alexandre Andrade <kaniabi@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/zerotk/zops"
 repository = "https://github.com/zerotk/zops"
-# documentation = "https://infra1.readthedocs.io"
+documentation = "https://github.com/zerotk/zops"
 classifiers = [
     'Development Status :: 2 - Pre-Alpha',
     'Intended Audience :: Developers',
@@ -16,6 +16,11 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+]
+packages = [
+  { include = "zerotk", from = "src" },
+  { include = "zops", from = "src" },
+  { include = "zz", from = "src" },
 ]
 
 [tool.poetry.scripts]

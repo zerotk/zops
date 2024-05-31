@@ -20,7 +20,7 @@ class TerraformPlanner:
         "replace": "!",
     }
 
-    def run(
+    async def run(
         self,
         workdir: pathlib.Path,
         deployment: str,
@@ -28,93 +28,66 @@ class TerraformPlanner:
         init: bool = True,
         plan: bool = True,
     ):
-        import contextlib
+        if workspace is None:
+            workspace = deployment
 
-        with contextlib.chdir(workdir):
-            self.console.title(f"{deployment}", verbosity=0)
+        # title = deployment
+        # if not deployment.startswith(workdir.name):
+        #     title = f"{workdir.name}:{deployment}"
+        # self.console.title(title, verbosity=0)
 
-            tfplan_bin = self.filesystem.Path(f".terraform/{deployment}.tfplan.bin")
-            tfplan_json = self.filesystem.Path(f"./.terraform/{deployment}.tfplan.json")
-            var_file = f"tfvars/{deployment}.tfvars"
-            if workspace is None:
-                workspace = deployment
+        await self._run_init(workdir)
+        tf_plan = await self._run_plan(workdir, deployment, workspace)
+        changes_report = await self._generate_report(workdir, tf_plan)
+        self._print_report(changes_report)
 
-            self.console.title("Initializing terraform", indent=1, verbosity=1)
-            if init:
-                if self.filesystem.Path("./bin/init").exists():
-                    self.console.item("Using ./bin/init", indent=2, verbosity=1)
-                    self.filesystem.run("./bin/init")
-                else:
-                    self.console.item("Using terraform", indent=2, verbosity=1)
-                    self.filesystem.run("terraform init")
-            else:
-                self.console.item(
-                    "Skipping (Use --init option to run init)", indent=2, verbosity=1
-                )
+    async def _run_init(self, workdir: pathlib.Path) -> None:
+        bin_init = "bin/init"
 
-            config = TerraformConfig(workdir)
+        if (workdir / bin_init).exists():
+            cmd_line = bin_init
+        else:
+            cmd_line = "terraform init -no-color"
+        _retcode, _stdout = await self.filesystem.run_async(cmd_line, cwd=workdir)
+        # TODO: Store output for future. Show in case of errors.
 
-            self.console.title(
-                f"Generating terraform plan binary file: {tfplan_bin}", indent=1, verbosity=1
+    async def _run_plan(self, workdir: pathlib.Path, deployment: str, workspace: str) -> None:
+        bin_plan = "bin/plan"
+        tfplan_bin = workdir / f".terraform/{deployment}.tfplan.bin"
+        tfplan_json = workdir / f".terraform/{deployment}.tfplan.json"
+
+        if (workdir / bin_plan).exists():
+            cmd_line = f"{bin_plan} {deployment} -out {tfplan_bin}"
+        else:
+            _retcode, _stdout = await self.filesystem.run_async(
+                f"terraform workspace select {workspace}", cwd=workdir
             )
-            if plan:
-                if self.filesystem.Path("./bin/plan").exists():
-                    self.console.title("* Using ./bin/plan", indent=1, verbosity=1)
-                    cmd_line = f"./bin/plan {deployment} -out {tfplan_bin}"
-                else:
-                    self.console.item(
-                        f"Selecting workspace {workspace}", indent=2, verbosity=1
-                    )
-                    self.filesystem.run(f"terraform workspace select {workspace}")
+            cmd_line = f"terraform plan -out {tfplan_bin}"
+            if FileSystem.Path(var_file).exists():
+                cmd_line += f" -var-file {var_file}"
+        _retcode, _stdout = await self.filesystem.run_async(
+            cmd_line, cwd=workdir
+        )
+        _retcode, stdout = await self.filesystem.run_async(
+            f"terraform show -json {tfplan_bin}", cwd=workdir
+        )
+        tfplan_json.write_text(stdout)
+        return self.filesystem.read_json(tfplan_json)
 
-                    cmd_line = f"terraform plan -out {tfplan_bin}"
-                    if FileSystem.Path(var_file).exists():
-                        self.console.item(
-                            f"Found terraform variables file: {var_file}",
-                            indent=2,
-                            verbosity=1,
-                        )
-                        cmd_line += f" -var-file {var_file}"
-                self.filesystem.run(cmd_line)
+    async def _generate_report(self, workdir, tf_plan):
+        config = TerraformConfig(workdir)
+        result = {}
+        for i_change in tf_plan.resource_changes:
+            actions = [self.ACTION_MAP.get(i, i) for i in i_change.change.actions]
+            actions = "/".join(actions)
+            if actions in ("no-op", "read"):
+                continue
+            filename = config._get_filename(workdir, i_change.address)
+            result.setdefault(filename, []).append(f"{actions} {i_change.address}")
 
-                self.console.title(
-                    f"Generating terraform plan json file: {tfplan_json}", indent=1, verbosity=1
-                )
-                completed_process = self.filesystem.run(
-                    f"terraform show -json {tfplan_bin}"
-                )
-                tfplan_json.write_text(completed_process.stdout.decode("UTF-8"))
-            else:
-                self.console.item(
-                    f"Skipping (Use --plan option to run plan)", indent=2, verbosity=1
-                )
+        return result
 
-            self.console.title(
-                f"Reading terraform plan json file: {tfplan_json}", indent=1, verbosity=1
-            )
-            changes = self.filesystem.read_json(tfplan_json).resource_changes
-            output = {}
-            for i_change in changes:
-                actions = [self.ACTION_MAP.get(i, i) for i in i_change.change.actions]
-                actions = "/".join(actions)
-                if actions in ("no-op", "read"):
-                    continue
-                filename = config._get_filename(workdir, i_change.address)
-                output.setdefault(filename, []).append(f"{actions} {i_change.address}")
-
-            self.console.title("Terraform plan summary:", indent=1, verbosity=1)
-            if output:
-                for i_filename, i_changes in sorted(output.items()):
-                    self.console.secho(i_filename)
-                    for j_change in i_changes:
-                        format, comment = self._get_change_format(i_filename, j_change)
-                        if comment:
-                            comment = f"  # {comment}"
-                        self.console.secho(f"  {j_change}{comment}", **format)
-            else:
-                self.console.secho(f"(no changes)")
-
-    def _get_change_format(self, filename: str, change: str):
+    async def _get_change_format(self, filename: str, change: str):
         r_format = dict(fg="white")
         r_comment = ""
         if (
@@ -126,6 +99,19 @@ class TerraformPlanner:
         elif change.startswith("+"):
             r_format = dict(fg="green")
         return r_format, r_comment
+
+    async def _print_report(self, changes_report):
+        self.console.title("Terraform plan summary:", indent=1, verbosity=1)
+        if changes_report:
+            for i_filename, i_changes in sorted(changes_report.items()):
+                self.console.secho(i_filename)
+                for j_change in i_changes:
+                    format, comment = await self._get_change_format(i_filename, j_change)
+                    if comment:
+                        comment = f"  # {comment}"
+                    self.console.secho(f"  {j_change}{comment}", **format)
+        else:
+            self.console.secho(f"(no changes)")
 
 
 class Cached:
@@ -227,16 +213,13 @@ class TerraformConfig:
         cache_key, result = self._terraform_config_inspect_cache.get(directory)
 
         if result is None:
-            r = self.filesystem.run(f"terraform-config-inspect --json {directory}")
-            terraform_configuration = r.stdout.decode("UTF-8")
-            terraform_configuration = self.filesystem.read_json_string(
-                terraform_configuration
-            )
+            retcode, terraform_configuration = self.filesystem.run_async(f"terraform-config-inspect --json {directory}", cwd=workdir)
+            terraform_configuration = self.filesystem.read_json_string(terraform_configuration)
 
-            if r.returncode != 0:
+            if retcode != 0:
                 diag = terraform_configuration.diagnostics[0]
                 if diag.summary == "Failed to read module directory":
-                    click.echo(f"WARNING: {diag.summary}: {directory}")
+                    self.console.secho(f"WARNING: {diag.summary}: {directory}")
                     return
                 else:
                     raise RuntimeError(

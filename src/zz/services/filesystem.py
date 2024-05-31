@@ -35,6 +35,19 @@ class FileSystem:
             stdout=subprocess.PIPE,
         )
 
+    async def run_async(self, cmd_line: str, cwd: str = None) -> tuple[int ,str]:
+        import asyncio
+
+        proc = await asyncio.create_subprocess_shell(
+            cmd_line,
+            stderr=asyncio.subprocess.STDOUT,
+            stdout=asyncio.subprocess.PIPE,
+            cwd=cwd,
+        )
+        stdout, _ = await proc.communicate()
+        return proc.returncode, stdout.decode("UTF-8")
+
+
     @classmethod
     def read_hcl(cls, filename: Path) -> Dict:
         import hcl2

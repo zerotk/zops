@@ -70,7 +70,7 @@ class Console(object):
 
     def item(self, message: str, indent: int = 0, fg=OUTPUT_COLOR, verbosity: int = 0):
         prefix = self._prefix(self.ITEM_PREFIX, indent=indent)
-        self.secho(prefix + message, fg=fg, verbosity=verbosity)
+        self.secho(prefix + str(message), fg=fg, verbosity=verbosity)
 
     #     def output(self, *args):
     #         self._secho(args, self.OUTPUT_COLOR)
@@ -92,11 +92,11 @@ class Console(object):
         return self.INDENTATION_TEXT * indent + prefix + separator
 
     def secho(self, message: str, fg=OUTPUT_COLOR, verbosity: int = 0) -> None:
+        import click
+
         if self._verbose_level < verbosity:
             return
 
         message.rstrip("\n")
-
-        import click
 
         click.secho(message, fg=fg)
