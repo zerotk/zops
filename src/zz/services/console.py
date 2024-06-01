@@ -1,46 +1,21 @@
-import functools
+from collections import OrderedDict
+
+import attrs
+
+from zerotk.wiring import Appliance
 
 
-# def setenv(name, value):
-#     import os
-#     os.environ[name] = value
-#     Console.setting('{}={}'.format(name, os.environ[name]))
-#
-#
-# def add_pythonpath(value):
-#     import sys
-#     import os
-#     value = os.path.normpath(value)
-#     sys.path.insert(0, value)
-#     Console.setting('SYS.PATH={}'.format(value))
-#
-#
-# def call_main(main_func, *argv):
-#     import sys
-#     old_argv = sys.argv
-#     sys.argv = [''] + list(argv)
-#     try:
-#         return main_func()
-#     except SystemExit as e:
-#         return e.code
-#     finally:
-#         sys.argv = old_argv
-#
-#
-# def ensure_dir(path):
-#     import os
-#     os.makedirs(path, exist_ok=True)
-#     Console.setting('DIRECTORY: {}'.format(path))
+@attrs.define
+class Console(Appliance):
 
-
-class Console(object):
-
-    TITLE_COLOR = "yellow"
+    TITLE_STYLE = "blue"
     EXECUTION_COLOR = "green"
     SETTING_COLOR = "blue"
-    OUTPUT_COLOR = "white"
-    INFO_COLOR = "white"
+    OUTPUT_STYLE = None
+    INFO_STYLE = "white"
     DEBUG_COLOR = "red"
+    ERROR_TITLE_COLOR = "red"
+    ERROR_MESSAGE_COLOR = None
 
     SEPARATOR_CHAR = " "
     INDENTATION_TEXT = "  "
@@ -49,21 +24,21 @@ class Console(object):
     TITLE_PREFIX = "#"
     DEBUG_PREFIX = "***"
     INFO_PREFIX = "\U0001F6C8"
+    ERROR_TITLE_PREFIX = "!!!"
 
-    @classmethod
-    @functools.cache
-    def singleton(cls) -> "Console":
-        return cls()
+    verbose_level: int = 0
+    _blocks = OrderedDict()
 
-    def __init__(self, verbose_level: int = 0):
-        from collections import OrderedDict
+    def title(
+        self, message: str, indent: int = 0, title_level: int = 1, verbosity: int = 0
+    ):
+        from rich.text import Text
 
-        self._verbose_level = verbose_level
-        self._blocks = OrderedDict()
-
-    def title(self, message: str, indent: int = 0, title_level: int = 1, verbosity: int = 0):
-        prefix = self._prefix(self.TITLE_PREFIX * title_level, indent=indent)
-        self.secho(prefix + message, fg=self.TITLE_COLOR, verbosity=verbosity)
+        message = self._prefix(self.TITLE_PREFIX * title_level, indent=indent) + str(
+            message
+        )
+        message = Text(message, style=self.TITLE_STYLE)
+        self.secho(message, verbosity=verbosity)
 
     #     def execution(self, message, verbose=0):
     #         self._secho(['$'] + [message], self.EXECUTION_COLOR)
@@ -71,9 +46,13 @@ class Console(object):
     #     def setting(self, message, verbose=0):
     #         self._secho(['!'] + list(args), self.SETTING_COLOR)
 
-    def item(self, message: str, indent: int = 0, fg=OUTPUT_COLOR, verbosity: int = 0):
-        prefix = self._prefix(self.ITEM_PREFIX, indent=indent)
-        self.secho(prefix + str(message), fg=fg, verbosity=verbosity)
+    def item(
+        self, message: str, indent: int = 0, style=OUTPUT_STYLE, verbosity: int = 0
+    ):
+        message = self._format_message(
+            message, prefix=self.ITEM_PREFIX, indent=indent, style=style
+        )
+        self.secho(message, verbosity=verbosity)
 
     #     def output(self, *args):
     #         self._secho(args, self.OUTPUT_COLOR)
@@ -82,42 +61,76 @@ class Console(object):
     #         self._secho(['>'] + list(args), self.OUTPUT_COLOR)
 
     def info(self, message: str, indent: int = 0, verbosity: int = 0):
-        prefix = self._prefix(self.INFO_PREFIX, indent=indent)
-        self.secho(prefix + message, self.INFO_COLOR)
+        message = self._format_message(
+            message, prefix=self.INFO_PREFIX, indent=indent, style=self.INFO_STYLE
+        )
+        self.secho(message, verbosity=verbosity)
 
     def debug(self, message: str, indent: int = 0, verbosity: int = 0):
-        prefix = self._prefix(self.DEBUG_PREFIX, indent=indent)
-        self.secho(prefix + message, fg=self.DEBUG_COLOR, verbosity=verbosity)
+        message = self._format_message(
+            message, prefix=self.DEBUG_PREFIX, indent=indent, style=self.DEBUG_COLOR
+        )
+        self.secho(message, verbosity=verbosity)
+
+    def error(
+        self,
+        title: str,
+        message: str = "",
+        title_level: int = 1,
+        indent: int = 0,
+        verbosity: int = 0,
+    ):
+        title = self._format_message(
+            title,
+            prefix=self.ERROR_TITLE_PREFIX,
+            indent=indent,
+            style=self.ERROR_TITLE_COLOR,
+        )
+        self.secho(title, verbosity=verbosity)
+        if message:
+            message = self._format_message(
+                message, prefix=None, indent=indent, style=self.ERROR_MESSAGE_COLOR
+            )
+            self.secho(message, verbosity=verbosity)
+
+    def _format_message(self, message: str, prefix: str, indent: int, style: str):
+        import rich.text
+
+        result = self._prefix(prefix, indent=indent) + str(message)
+        result = rich.text.Text(result, style)
+        return result
 
     def _prefix(
         self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
     ) -> str:
-        return self.INDENTATION_TEXT * indent + prefix + separator
+        result = self.INDENTATION_TEXT * indent
+        if prefix is not None:
+            result += prefix + separator
+        return result
 
-    def secho(self, message: str, fg=OUTPUT_COLOR, verbosity: int = 0) -> None:
-        import click
+    def secho(self, message: str, fg=OUTPUT_STYLE, verbosity: int = 0) -> None:
+        import rich
 
-        if self._verbose_level < verbosity:
+        if self.verbose_level < verbosity:
             return
 
-        message.rstrip("\n")
-        click.secho(message, fg=fg)
+        rich.print(message)
 
     def create_block(self, block_id, text):
         assert block_id not in self._blocks
-        text = f"{block_id}: {text}"
+        text = f"[white]{block_id}[/white]: {text}"
         self._blocks[block_id] = text
         self.secho(text)
-    
+
     def update_block(self, block_id, text):
         assert block_id in self._blocks
-        text = f"{block_id}: {text}"
+        text = f"[white]{block_id}[/white]: {text}"
         self._blocks[block_id] = text
         self._redraw_blocks()
 
     def clear_blocks(self):
         self._blocks.clear()
-    
+
     def _redraw_blocks(self):
         block_text = "\n".join(self._blocks.values())
         block_count = len(self._blocks)

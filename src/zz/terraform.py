@@ -1,18 +1,27 @@
+import asyncio
 import pathlib
 
 import attrs
 
+from zerotk.text import dedent
+from zerotk.wiring import Appliance
+from zerotk.wiring import Dependency
+from zerotk.wiring import Requirements
+from zz.services.caches import Caches
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
-from zerotk.text import dedent
-import asyncio
+from zz.services.subprocess import Subprocess
 
 
 @attrs.define
-class TerraformPlanner:
+class TerraformPlanner(Appliance):
 
-    filesystem: attrs.field = FileSystem.singleton()
-    console: attrs.field = Console.singleton()
+    injector = Requirements(
+        filesystem=Dependency(FileSystem),
+        console=Dependency(Console),
+        subprocess=Dependency(Subprocess),
+    )
+
     _semaphores: list[asyncio.Semaphore] = []
 
     ACTION_MAP = {
@@ -22,23 +31,29 @@ class TerraformPlanner:
         "replace": "!",
     }
 
-    async def run_all(self, deployments_seeds):
+    class ExecutionError(RuntimeError):
+        pass
+
+    async def generate_reports(self, deployments_seeds):
         deployments, workdirs = self._list_deployments(deployments_seeds)
 
+        result = []
+
         # Initialize each workdir only once
-        await asyncio.gather(*[
-            self._run_init(i_workdir)
-            for i_workdir in workdirs
-        ])
+        self.console.title("Initializing (terraform init)")
+        init_functions = [self._run_init(i_workdir) for i_workdir in workdirs]
+        await asyncio.gather(*init_functions)
         self.console.clear_blocks()
 
+        # First stop. If any of the initialization fails we stop the process.
+        if not self._check_continue():
+            return result
+
         # Run the report for all deployments
-        self._semaphores = {
-            i: asyncio.Semaphore(1)
-            for i in workdirs
-        }
-        run_list = [
-            self.run(
+        self.console.title("Generating reports (terraform plan + report generation)")
+        self._semaphores = {i: asyncio.Semaphore(1) for i in workdirs}
+        generate_report_functions = [
+            self.generate_report(
                 i_workdir,
                 i_deployment,
                 i_workspace,
@@ -46,43 +61,43 @@ class TerraformPlanner:
             )
             for i_workdir, i_deployment, i_workspace in deployments
         ]
-        result = await asyncio.gather(*run_list)
+        result = await asyncio.gather(*generate_report_functions)
+
+        # Second and last stop. Check for any errors in the external executions.
+        self._check_continue()
+
         return result
 
-    async def run(
+    async def generate_report(
         self,
         workdir: pathlib.Path,
         deployment: str,
         workspace: str = None,
         semaphore: asyncio.Semaphore = None,
     ):
-        if workspace is None:
-            workspace = deployment
+        workspace = workspace or deployment
 
         title = deployment
         if not deployment.startswith(workdir.name):
             title = f"{workdir.name}:{deployment}"
-        self.console.create_block(title, title)
 
-        # IDEAS:
-        # - Use semaphore only for the tasks that cannot be executed at the same time,
-        #   namely, the terraform calls
-        self.console.update_block(title, f"waiting for {workdir}")
-        async with semaphore:           
-            self.console.update_block(title, "plan")
-            tf_plan = await self._run_plan(workdir, deployment, workspace)
-        self.console.update_block(title, "report")
-        result = await self._generate_report(workdir, tf_plan)
-        self.console.update_block(title, "finished")
+        result = {}
+        try:
+            self.console.create_block(title, f"waiting for {workdir}")
+            async with semaphore:
+                self.console.update_block(title, "plan")
+                tf_plan = await self._run_plan(workdir, deployment, workspace)
+
+            self.console.update_block(title, "report")
+            result = await self._generate_report(workdir, tf_plan)
+
+            self.console.update_block(title, "[green]finished[/green]")
+        except self.ExecutionError:
+            self.console.update_block(title, "[red]error[/red]")
+
         return result
 
-    async def _fake_run(self):
-        import random
-        sleep_time = 3 + int(4 * random.random())
-        await asyncio.sleep(sleep_time)
-        return sleep_time
-
-    async def _run_init(self, workdir: pathlib.Path) -> None:
+    async def _run_init(self, workdir: pathlib.Path) -> bool:
         self.console.create_block(workdir, "init")
 
         bin_init = "bin/init"
@@ -91,37 +106,52 @@ class TerraformPlanner:
             cmd_line = bin_init
         else:
             cmd_line = "terraform init -no-color"
-        retcode, output = await self.filesystem.run_async(cmd_line, cwd=workdir)
 
-        # TODO: Store output for future. Show in case of errors.
-        self.console.update_block(workdir, f"init: done")
-        return output
+        r = await self.subprocess.run_async(cmd_line, cwd=workdir)
+        if r.is_error():
+            self.console.update_block(workdir, "[red]init[/red]")
+        else:
+            self.console.update_block(workdir, "[green]init[/green]")
 
-    async def _run_plan(self, workdir: pathlib.Path, deployment: str, workspace: str) -> None:
+        return not r.is_error()
+
+    async def _run_plan(
+        self, workdir: pathlib.Path, deployment: str, workspace: str
+    ) -> None:
         bin_plan = "bin/plan"
-        tfplan_bin = workdir / f".terraform/{deployment}.tfplan.bin"
-        tfplan_json = workdir / f".terraform/{deployment}.tfplan.json"
+        tfplan_bin = f".terraform/{deployment}.tfplan.bin"
+        tfplan_json = f".terraform/{deployment}.tfplan.json"
+        var_file = f"tfvars/{deployment}.tfvars"
 
         if (workdir / bin_plan).exists():
+
             cmd_line = f"{bin_plan} {deployment} -out {tfplan_bin}"
         else:
-            _retcode, _stdout = await self.filesystem.run_async(
+            r = await self.subprocess.run_async(
                 f"terraform workspace select {workspace}", cwd=workdir
             )
+            if r.is_error():
+                raise self.ExecutionError(r)
             cmd_line = f"terraform plan -out {tfplan_bin}"
-            if FileSystem.Path(var_file).exists():
+            if (workdir / var_file).exists():
                 cmd_line += f" -var-file {var_file}"
-        _retcode, _stdout = await self.filesystem.run_async(
-            cmd_line, cwd=workdir
-        )
-        _retcode, stdout = await self.filesystem.run_async(
+
+        r = await self.subprocess.run_async(cmd_line, cwd=workdir)
+        if r.is_error():
+            raise self.ExecutionError(r)
+
+        r = await self.subprocess.run_async(
             f"terraform show -json {tfplan_bin}", cwd=workdir
         )
-        tfplan_json.write_text(stdout)
-        return self.filesystem.read_json(tfplan_json)
+        if r.is_error():
+            raise self.ExecutionError(r)
+
+        (workdir / tfplan_json).write_text(r.output)
+
+        return self.filesystem.read_json(workdir / tfplan_json)
 
     async def _generate_report(self, workdir, tf_plan):
-        config = TerraformConfig(workdir)
+        config = TerraformConfig(appliances=self.appliances, workdir=workdir)
         result = {}
         for i_change in tf_plan.resource_changes:
             actions = [self.ACTION_MAP.get(i, i) for i in i_change.change.actions]
@@ -157,16 +187,18 @@ class TerraformPlanner:
                         comment = f"  # {comment}"
                     self.console.secho(f"  {j_change}{comment}", **format)
         else:
-            self.console.secho(f"(no changes)")
+            self.console.secho("(no changes)")
 
     @classmethod
     def split_deployment(cls, deployment_seed: str) -> tuple[pathlib.Path, str, str]:
         import re
 
         DEPLOYMENT_SEED_RE = re.compile(
-            "^(?:(?P<workdir>[\w/]+)\:)?(?P<deployment>[\w/-]+)?(?:\|(?P<workspace>[\w]+))?$"
+            r"^(?:(?P<workdir>[\w/]+)\:)?(?P<deployment>[\w/-]+)?(?:\|(?P<workspace>[\w]+))?$"
         )
-        workdir, deployment, workspace = DEPLOYMENT_SEED_RE.match(deployment_seed).groups()
+        workdir, deployment, workspace = DEPLOYMENT_SEED_RE.match(
+            deployment_seed
+        ).groups()
         if workspace is None:
             workspace = deployment
         workdir = pathlib.Path.cwd() if workdir is None else pathlib.Path(workdir)
@@ -182,42 +214,45 @@ class TerraformPlanner:
             r_deployments.append((workdir, deployment, workspace))
         return r_deployments, r_workdirs
 
+    def _check_continue(self):
+        """
+        Check the subprocess service for execution errors printing errors messages if any error
+        happened. Returns True if there was no errors.
+        """
+        result = True
+        for i_result in self.subprocess.execution_logs:
+            if not i_result.is_error():
+                continue
+            result = False
+            self.console.error(
+                f"Execution failed for '{i_result.cmd_line}' (retcode: {i_result.retcode})",
+                i_result.output,
+            )
+        return result
 
-class Cached:
+    async def _fake_run(self):
+        import random
 
-    def __init__(self, name):
-        self._name = name
-        self._results = {}
-
-    def get(self, *args):
-        cache_key = tuple(args)
-        result = self._results.get(cache_key, None)
-        # if result is None:
-        #     hitmiss = "MISS"
-        # else:
-        #     hitmiss = "hit"
-        # print(f"{self._name}( {cache_key} )")
-        return cache_key, result
-
-    def set(self, cache_key, value):
-        self._results[cache_key] = value
+        sleep_time = 3 + int(4 * random.random())
+        await asyncio.sleep(sleep_time)
+        return sleep_time
 
 
 @attrs.define
-class TerraformConfig:
+class TerraformConfig(Appliance):
     """
     Interface to terraform configuration data.
     """
 
-    _resources_map_cache = Cached("_resources_map")
-    _modules_cache = Cached("_modules")
-    _terraform_config_inspect_cache = Cached("_terraform_config_inspect")
+    injector = Requirements(
+        caches=Dependency(Caches),
+        filesystem=Dependency(FileSystem),
+    )
 
     workdir: FileSystem.Path
-    filesystem: attrs.field = FileSystem.singleton()
 
     def _modules(self, workdir, module):
-        cache_key, result = self._modules_cache.get(workdir, module)
+        cache_key, result = self.caches.get("TerraforConfig._modules", workdir, module)
 
         if result is None:
             result = {}
@@ -228,13 +263,14 @@ class TerraformConfig:
             for i_module in raw_modules.Modules:
                 raw[i_module.Key] = self._terraform_config_inspect(i_module.Dir)
             result = raw.get(module, (None, None))
-            self._modules_cache.set(cache_key, result)
+            self.caches.set("TerraforConfig._modules", cache_key, result)
 
         return result
 
-
     def _resources_map(self, workdir, root_filename=None, module="", prefix=""):
-        cache_key, result = self._resources_map_cache.get(root_filename, module, prefix)
+        cache_key, result = self.caches.get(
+            "TerraformConfig._resources_map", root_filename, module, prefix
+        )
 
         if result is None:
             result = {}
@@ -260,7 +296,7 @@ class TerraformConfig:
                 )
                 result.update(r)
 
-            self._resources_map_cache.set(cache_key, result)
+            self.caches.set("TerraformConfig._resources_map", cache_key, result)
 
         return result
 
@@ -279,11 +315,17 @@ class TerraformConfig:
         Return a map between resources names and their filenames in the given project.
         """
         directory = self.filesystem.Path(directory).resolve()
-        cache_key, result = self._terraform_config_inspect_cache.get(directory)
+        cache_key, result = self.caches.get(
+            "TerraformConfig._terraform_config_inspect", directory
+        )
 
         if result is None:
-            retcode, terraform_configuration = self.filesystem.run_async(f"terraform-config-inspect --json {directory}", cwd=workdir)
-            terraform_configuration = self.filesystem.read_json_string(terraform_configuration)
+            retcode, terraform_configuration = self.subprocess.run_async(
+                f"terraform-config-inspect --json {directory}", cwd=directory
+            )
+            terraform_configuration = self.filesystem.read_json_string(
+                terraform_configuration
+            )
 
             if retcode != 0:
                 diag = terraform_configuration.diagnostics[0]
@@ -306,11 +348,16 @@ class TerraformConfig:
                 resources_map[i_name] = i_details.pos.filename
 
             modules_map = {}
-            for i_module_name, i_details in terraform_configuration.module_calls.items():
+            for (
+                i_module_name,
+                i_details,
+            ) in terraform_configuration.module_calls.items():
                 modules_map[i_module_name] = i_details.pos.filename
 
             result = (resources_map, modules_map)
 
-            self._terraform_config_inspect_cache.set(cache_key, result)
+            self.caches.set(
+                "TerraformConfig._terraform_config_inspect", cache_key, result
+            )
 
         return result

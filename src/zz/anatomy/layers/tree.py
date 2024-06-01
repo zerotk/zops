@@ -1,7 +1,8 @@
 import os
 from collections import OrderedDict
-from collections.abc import MutableMapping
+
 from zz.services.template_engine import TemplateEngine
+
 
 class UndefinedVariableInTemplate(KeyError):
     pass
@@ -34,7 +35,9 @@ class AnatomyFile(object):
         """
         import functools
 
-        expand = functools.partial(TemplateEngine.run, recursive_expansion=True, trim_blocks=True)
+        expand = functools.partial(
+            TemplateEngine.run, recursive_expansion=True, trim_blocks=True
+        )
 
         filename = filename or self.__filename
         filename = os.path.join(directory, filename)
@@ -98,7 +101,9 @@ class AnatomySymlink(object):
         """
         import functools
 
-        expand = functools.partial(TemplateEngine.run, recursive_expansion=True, trim_blocks=True)
+        expand = functools.partial(
+            TemplateEngine.run, recursive_expansion=True, trim_blocks=True
+        )
 
         filename = filename or self.__filename
         filename = os.path.join(directory, filename)

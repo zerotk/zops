@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Dict, List
-
 import attrs
 
 from zz.services.console import Console
@@ -36,7 +33,6 @@ class AnatomyEngine:
         AnatomyFeatureRegistry.register_from_file(features_filename, templates_dir)
         AnatomyPlaybook.from_file(playbook_filename).apply(playbook_filename.parent)
 
-
     def _find_features(self, playbook_filename):
         import pathlib
 
@@ -58,7 +54,6 @@ class AnatomyEngine:
             raise SystemError(1)
 
         return pathlib.Path(result)
-
 
     def _register_features(self, filename, templates_dir):
         from zz.anatomy.layers.feature import AnatomyFeatureRegistry

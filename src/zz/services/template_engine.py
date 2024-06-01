@@ -1,5 +1,5 @@
-from collections.abc import MutableMapping
 from collections import OrderedDict
+from collections.abc import MutableMapping
 
 
 class TemplateEngine(object):
@@ -22,7 +22,7 @@ class TemplateEngine(object):
         variables,
         alt_expansion=False,
         recursive_expansion=False,
-        trim_blocks=False
+        trim_blocks=False,
     ):
         from jinja2 import Environment
         from jinja2 import StrictUndefined
@@ -113,6 +113,7 @@ class TemplateEngine(object):
 
         def is_enabled(o):
             from str2bool import str2bool
+
             result = o.get("enabled", None)
             if result is None:
                 return True

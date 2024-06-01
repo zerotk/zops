@@ -1,52 +1,22 @@
-import functools
 import pathlib
 from typing import Dict
 from typing import Iterable
 
+import attrs
 
-class FileSystem:
+from zerotk.wiring import Appliance
+
+
+@attrs.define
+class FileSystem(Appliance):
     """
     Central point of access to file system to make tests easier.
     """
-
-    @classmethod
-    @functools.cache
-    def singleton(cls) -> "FileSystem":
-        return cls()
 
     Path = pathlib.Path
 
     def iterdir(self, path: Path) -> Iterable:
         return path.iterdir()
-
-    def call(self, *args, **kwargs) -> int:
-        import subprocess
-
-        result = subprocess.call(*args, shell=False, **kwargs)
-        return result
-
-    def run(self, cmd_line: str):
-        import shlex
-        import subprocess
-
-        return subprocess.run(
-            shlex.split(cmd_line),
-            stderr=subprocess.STDOUT,
-            stdout=subprocess.PIPE,
-        )
-
-    async def run_async(self, cmd_line: str, cwd: str = None) -> tuple[int ,str]:
-        import asyncio
-
-        proc = await asyncio.create_subprocess_shell(
-            cmd_line,
-            stderr=asyncio.subprocess.STDOUT,
-            stdout=asyncio.subprocess.PIPE,
-            cwd=cwd,
-        )
-        stdout, _ = await proc.communicate()
-        return proc.returncode, stdout.decode("UTF-8")
-
 
     @classmethod
     def read_hcl(cls, filename: Path) -> Dict:

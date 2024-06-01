@@ -1,5 +1,8 @@
-import click
 import asyncio
+
+import click
+
+from zerotk.wiring import Appliances
 
 
 @click.group(name="tf")
@@ -13,10 +16,7 @@ def main():
 @click.option("--skip-plan", is_flag=True)
 @click.option("--verbose", is_flag=True)
 def plan(
-    deployments: list[str],
-    skip_init: bool,
-    skip_plan: bool,
-    verbose: bool
+    deployments: list[str], skip_init: bool, skip_plan: bool, verbose: bool
 ) -> None:
     """
     Terraform plan with short summary.
@@ -35,11 +35,14 @@ async def tf_plan(deployments, skip_init, skip_plan, verbose):
     from zz.services.console import Console
     from zz.terraform import TerraformPlanner
 
+    console = Console(verbose_level=1 if verbose else 0)
+    appliances = Appliances(consoel=console)
+
     # NOTE: We want to use the same instance of the planner to use and reuse the caches.
-    planner = TerraformPlanner(
-        console=Console(verbose_level=1 if verbose else 0),
-    )
-    result = await planner.run_all(deployments)
+    planner = TerraformPlanner(appliances=appliances)
+    result = await planner.generate_reports(deployments)
+
+    console.title("Terraform changes report")
     for i in result:
         planner.print_report(i)
     # for i_task in asyncio.as_completed(tasks):

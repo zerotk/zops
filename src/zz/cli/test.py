@@ -1,8 +1,14 @@
+import shlex
 from functools import update_wrapper
 from typing import Any
 
 import click
 import inject
+import pytest
+from click.testing import CliRunner
+
+
+# Tests Fixtures
 
 
 # Services
@@ -68,14 +74,6 @@ def inject_function(filesystem: FileSystem, template_engine: TemplateEngine):
     click.echo("""test.second""")
     click.echo(filesystem)
     click.echo(template_engine)
-
-
-# Tests Fixtures
-
-import shlex
-
-import pytest
-from click.testing import CliRunner
 
 
 class MyRunner:
