@@ -6,9 +6,12 @@ import click
 def main(directory):
     from zz.anatomy import AnatomyEngine
     from zz.codegen import CodegenEngine
+    from zerotk.wiring import Appliances
 
-    codegen = AnatomyEngine()
+    appliances = Appliances()
+
+    codegen = AnatomyEngine(appliances=appliances)
     codegen.run(directory)
 
-    codegen = CodegenEngine()
+    codegen = CodegenEngine(appliances=appliances)
     codegen.run(directory)

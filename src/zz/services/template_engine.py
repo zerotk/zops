@@ -1,19 +1,12 @@
 from collections import OrderedDict
 from collections.abc import MutableMapping
+from zerotk.wiring import Appliance
 
 
-class TemplateEngine(object):
+class TemplateEngine(Appliance):
     """
     Provide an easy and centralized way to change how we expand templates.
     """
-
-    __singleton = None
-
-    @classmethod
-    def singleton(cls):
-        if cls.__singleton is None:
-            cls.__singleton = cls()
-        return cls.__singleton
 
     @classmethod
     def run(

@@ -94,10 +94,7 @@ class Console(Appliance):
             self.secho(message, verbosity=verbosity)
 
     def _format_message(self, message: str, prefix: str, indent: int, style: str):
-        import rich.text
-
         result = self._prefix(prefix, indent=indent) + str(message)
-        result = rich.text.Text(result, style)
         return result
 
     def _prefix(

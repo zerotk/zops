@@ -2,17 +2,16 @@ import attrs
 
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
-
-
-def wired_dependency(cls):
-    return cls.singleton()
+from zerotk.wiring import Appliance, Requirements, Dependency
 
 
 @attrs.define
-class AnatomyEngine:
+class AnatomyEngine(Appliance):
 
-    filesystem: attrs.field = wired_dependency(FileSystem)
-    console: attrs.field = wired_dependency(Console)
+    injector = Requirements(
+        filesystem = FileSystem,
+        console = Console,
+    )
 
     def run(self, directory):
         playbooks = self.filesystem.Path(directory).rglob("anatomy-playbook.yml")

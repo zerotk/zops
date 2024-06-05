@@ -1,4 +1,5 @@
 import attrs
+import collections
 
 
 class Dependency:
@@ -20,7 +21,11 @@ class Dependency:
 class Requirements:
 
     def __init__(self, **dependencies):
-        self.dependencies = dependencies
+        self.dependencies = collections.OrderedDict()
+        for i_name, i_dep in dependencies.items():
+            if not isinstance(i_dep, Dependency):
+                i_dep = Dependency(i_dep)
+            self.dependencies[i_name] = i_dep
 
 
 class Appliances:
@@ -29,6 +34,9 @@ class Appliances:
         self.__appliances = appliances
         self._tree = []
         self._name = ["<root>"]
+
+    def __repr__(self):
+        return f"<{self._name}>"
 
     def get(self, name):
         return self.__appliances.get(name)
@@ -44,7 +52,9 @@ class Appliances:
         return self._tree
 
     def initialize(self, obj, requirements):
+        # print(f"DEBUG: initialize: {obj}")
         for i_name, i_dep in requirements.dependencies.items():
+            # print(f"DEBUG: initialize.{i_name} = {i_dep}")
             self._record(i_name, i_dep)
             app = self.get(i_name)
             if app is None:
@@ -60,9 +70,6 @@ class Appliance:
 
     injector = Requirements()
     appliances: Appliances = None
-
-    def __init__(self, appliances=None):
-        self.appliances = self.initialize(appliances)
 
     def __attrs_post_init__(self):
         if self.appliances is None:

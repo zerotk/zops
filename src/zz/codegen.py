@@ -7,14 +7,17 @@ import attrs
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 from zz.services.template_engine import TemplateEngine
+from zerotk.wiring import Appliance, Dependency, Requirements
 
 
 @attrs.define
-class CodegenEngine:
+class CodegenEngine(Appliance):
 
-    filesystem: attrs.field = FileSystem.singleton()
-    template_engine: attrs.field = TemplateEngine.singleton()
-    console: attrs.field = Console.singleton()
+    injector = Requirements(
+        filesystem = FileSystem,
+        template_engine = TemplateEngine,
+        console = Console,
+    )
 
     def run(self, directory):
         playbooks = self.filesystem.Path(directory).rglob("*.codegen.yml")
