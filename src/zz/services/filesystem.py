@@ -2,12 +2,10 @@ import pathlib
 from typing import Dict
 from typing import Iterable
 
-import attrs
-
-from zerotk.wiring import Appliance
+from zerotk.appliance import Appliance
 
 
-@attrs.define
+@Appliance.define
 class FileSystem(Appliance):
     """
     Central point of access to file system to make tests easier.

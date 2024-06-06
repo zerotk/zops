@@ -2,8 +2,6 @@ import asyncio
 
 import click
 
-from zerotk.wiring import Appliances
-
 
 @click.group(name="git")
 def main():

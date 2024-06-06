@@ -1,8 +1,9 @@
 from collections import OrderedDict
 from collections.abc import MutableMapping
-from zerotk.wiring import Appliance
+from zerotk.appliance import Appliance
 
 
+@Appliance.define
 class TemplateEngine(Appliance):
     """
     Provide an easy and centralized way to change how we expand templates.

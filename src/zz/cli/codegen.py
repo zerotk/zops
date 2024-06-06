@@ -6,7 +6,7 @@ import click
 def main(directory):
     from zz.anatomy import AnatomyEngine
     from zz.codegen import CodegenEngine
-    from zerotk.wiring import Appliances
+    from zerotk.appliance import Appliances
 
     appliances = Appliances()
 

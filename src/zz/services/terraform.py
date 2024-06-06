@@ -1,17 +1,16 @@
-import functools
+from .subprocess import SubProcess
+from zerotk.appliance import Appliance
 
-from .filesystem import FileSystem
 
-
-class Terraform:
+@Appliance.define
+class Terraform(Appliance):
     """
     Terraform singleton.
     """
 
-    @classmethod
-    @functools.cache
-    def singleton(cls) -> "Terraform":
-        return cls()
+    __requirements__ = Appliance.Requirements(
+        subprocess = SubProcess,
+    )
 
     def run(self, cmd, cwd: str, *args) -> None:
         """
@@ -19,6 +18,5 @@ class Terraform:
 
         Uses shell scripts found on terraform/infrastructure/bin directory.
         """
-        fs = FileSystem.singleton()
-        fs.call(["bin/init"], cwd=str(cwd))
-        fs.call([f"bin/{cmd}", *args], cwd=str(cwd))
+        self.subprocess.call(["bin/init"], cwd=str(cwd))
+        self.subprocess.call([f"bin/{cmd}", *args], cwd=str(cwd))

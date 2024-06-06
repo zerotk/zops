@@ -1,11 +1,10 @@
 from collections import OrderedDict
-
+from zerotk.appliance import Appliance
+from rich.console import Console
 import attrs
 
-from zerotk.wiring import Appliance
 
-
-@attrs.define
+@Appliance.define
 class Console(Appliance):
 
     TITLE_STYLE = "blue"
@@ -28,96 +27,136 @@ class Console(Appliance):
 
     verbose_level: int = 0
     _blocks = OrderedDict()
+    _console = Console(highlight=False)
+
+    @attrs.define
+    class ConsoleStyle:
+        color: str = "white"
+        prefix: str = ""
+        prefix_sep: str = " "
+        indent: int = 0
+        indent_char: str = "  "
+
+        def format_message(self, message):
+            result = self.indent * self.indent_char
+            result += self.prefix + self.prefix_sep
+            result += f"[{self.color}]{message}[/{self.color}]"
+            return result
+
+    STYLES = {
+        "title": ConsoleStyle(
+            color="blue",
+        ),
+        "item": ConsoleStyle(
+            color="white",
+            prefix="\U0001F784",
+        ),
+        "info": ConsoleStyle(
+            color="white",
+            prefix="\U0001F6C8",
+        ),
+        "debug": ConsoleStyle(
+            color="white",
+            prefix="\U0001F41B",
+        ),
+        "warning": ConsoleStyle(
+            color="yellow",
+            prefix="\U000026A0",
+        ),
+        "error": ConsoleStyle(
+            color="red",
+            prefix="\U0001F6C7",
+        ),
+    }
 
     def title(
-        self, message: str, indent: int = 0, title_level: int = 1, verbosity: int = 0
+        self,
+        message: str,
+        verbosity: int = 0,
+        **kwargs,
     ):
-        from rich.text import Text
-
-        message = self._prefix(self.TITLE_PREFIX * title_level, indent=indent) + str(
-            message
-        )
-        message = Text(message, style=self.TITLE_STYLE)
-        self.secho(message, verbosity=verbosity)
-
-    #     def execution(self, message, verbose=0):
-    #         self._secho(['$'] + [message], self.EXECUTION_COLOR)
-    #
-    #     def setting(self, message, verbose=0):
-    #         self._secho(['!'] + list(args), self.SETTING_COLOR)
+        style = self.STYLES["title"]
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
     def item(
-        self, message: str, indent: int = 0, style=OUTPUT_STYLE, verbosity: int = 0
+        self,
+        message: str,
+        verbosity: int = 0,
+        **kwargs,
     ):
-        message = self._format_message(
-            message, prefix=self.ITEM_PREFIX, indent=indent, style=style
-        )
-        self.secho(message, verbosity=verbosity)
+        style = self.STYLES["item"]
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
-    #     def output(self, *args):
-    #         self._secho(args, self.OUTPUT_COLOR)
-    #
-    #     def response(self, *args):
-    #         self._secho(['>'] + list(args), self.OUTPUT_COLOR)
+    def info(
+        self,
+        message: str,
+        verbosity: int = 0,
+        **kwargs,
+    ):
+        style = self.STYLES["info"]
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
-    def info(self, message: str, indent: int = 0, verbosity: int = 0):
-        message = self._format_message(
-            message, prefix=self.INFO_PREFIX, indent=indent, style=self.INFO_STYLE
-        )
-        self.secho(message, verbosity=verbosity)
+    def debug(
+        self,
+        message: str,
+        verbosity: int = 0,
+        **kwargs,
+    ):
+        style = self.STYLES["debug"]
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
-    def debug(self, message: str, indent: int = 0, verbosity: int = 0):
-        message = self._format_message(
-            message, prefix=self.DEBUG_PREFIX, indent=indent, style=self.DEBUG_COLOR
-        )
-        self.secho(message, verbosity=verbosity)
+    def warning(
+        self,
+        message: str,
+        verbosity: int = 0,
+        indent: int = 0,
+    ):
+        style = self.STYLES["warning"].copy()
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
     def error(
         self,
-        title: str,
-        message: str = "",
-        title_level: int = 1,
-        indent: int = 0,
+        message: str,
         verbosity: int = 0,
+        indent: int = 0,
     ):
-        title = self._format_message(
-            title,
-            prefix=self.ERROR_TITLE_PREFIX,
-            indent=indent,
-            style=self.ERROR_TITLE_COLOR,
-        )
-        self.secho(title, verbosity=verbosity)
-        if message:
-            message = self._format_message(
-                message, prefix=None, indent=indent, style=self.ERROR_MESSAGE_COLOR
-            )
-            self.secho(message, verbosity=verbosity)
+        style = self.STYLES["error"].copy()
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
 
-    def _format_message(self, message: str, prefix: str, indent: int, style: str):
-        result = self._prefix(prefix, indent=indent) + str(message)
-        return result
+    def _print(self, message, style=ConsoleStyle()):
+        message = style.format_message(message)
+        self._console.print(message)
 
-    def _prefix(
-        self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
-    ) -> str:
-        result = self.INDENTATION_TEXT * indent
-        if prefix is not None:
-            result += prefix + separator
-        return result
-
-    def secho(self, message: str, fg=OUTPUT_STYLE, verbosity: int = 0) -> None:
-        import rich
-
-        if self.verbose_level < verbosity:
-            return
-
-        rich.print(message)
+#     def _format_message(self, message: str, prefix: str, indent: int, style: str):
+#         result = self._prefix(prefix, indent=indent) + str(message)
+#         return result
+#
+#     def _prefix(
+#         self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
+#     ) -> str:
+#         result = self.INDENTATION_TEXT * indent
+#         if prefix is not None:
+#             result += prefix + separator
+#         return result
+#
+#     def secho(self, message: str, verbosity: int = 0) -> None:
+#
+#         if self.verbose_level < verbosity:
+#             return
+#
+#         self._console.print(message, highlight=False)
 
     def create_block(self, block_id, text):
         assert block_id not in self._blocks
         text = f"[white]{block_id}[/white]: {text}"
         self._blocks[block_id] = text
-        self.secho(text)
+        self._print(text)
 
     def update_block(self, block_id, text):
         assert block_id in self._blocks
@@ -131,6 +170,7 @@ class Console(Appliance):
     def _redraw_blocks(self):
         block_text = "\n".join(self._blocks.values())
         block_count = len(self._blocks)
+        # TODO: Use console for this.
         print(f"\x1b[{block_count}A", end="")
         print("\x1b[0J", end="")
-        self.secho(block_text)
+        self._print(block_text)

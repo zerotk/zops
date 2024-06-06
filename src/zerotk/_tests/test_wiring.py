@@ -1,5 +1,5 @@
 import attrs
-from zerotk.wiring import Appliance, Dependency, Requirements, Appliances
+from zerotk.appliance import Appliance, Dependency, Requirements, Appliances
 
 
 class ConsoleLogger:
@@ -15,7 +15,7 @@ class ConsoleLogger:
 @attrs.define
 class AlphaService(Appliance):
 
-    injector = Requirements(
+    __requirements__ = Requirements(
         console=Dependency(ConsoleLogger)
     )
     name: str
@@ -27,7 +27,7 @@ class AlphaService(Appliance):
 @attrs.define
 class BravoService(Appliance):
 
-    injector = Requirements(
+    __requirements__ = Requirements(
         console=Dependency(ConsoleLogger),
         alpha=Dependency(AlphaService, "level_two"),
     )

@@ -1,11 +1,9 @@
-import functools
 import pathlib
-from zerotk.wiring import Appliance
-import attrs
+from zerotk.appliance import Appliance
 
 
-@attrs.define
-class Subprocess(Appliance):
+@Appliance.define
+class SubProcess(Appliance):
     """
     Call external commands.
     """
@@ -21,6 +19,7 @@ class Subprocess(Appliance):
 
         def is_error(self):
             return self.retcode != 0
+
 
     def call(self, *args, **kwargs) -> int:
         import subprocess

@@ -1,22 +1,22 @@
 import functools
-from zerotk.wiring import Appliance, Requirements, Dependency
+from zerotk.appliance import Appliance
 from .filesystem import FileSystem
 from .console import Console
-from .subprocess import Subprocess
+from .subprocess import SubProcess
 import attrs
 import asyncio
 
 
-@attrs.define
+@Appliance.define
 class Git(Appliance):
     """
     Git
     """
 
-    injector = Requirements(
-        console = Dependency(Console),
-        filesystem = Dependency(FileSystem),
-        subprocess = Dependency(Subprocess)
+    __requirements__ = Appliance.Requirements(
+        console = Console,
+        filesystem = FileSystem,
+        subprocess = SubProcess,
     )
 
     async def status_report(self, directory: FileSystem.Path = FileSystem.Path.cwd()) -> None:

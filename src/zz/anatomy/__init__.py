@@ -1,14 +1,12 @@
-import attrs
-
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
-from zerotk.wiring import Appliance, Requirements, Dependency
+from zerotk.appliance import Appliance
 
 
-@attrs.define
+@Appliance.define
 class AnatomyEngine(Appliance):
 
-    injector = Requirements(
+    __requirements__ = Appliance.Requirements(
         filesystem = FileSystem,
         console = Console,
     )

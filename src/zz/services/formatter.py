@@ -5,15 +5,14 @@ from typing import Tuple
 from .filesystem import FileSystem
 
 
-class Formatter:
+class Formatter(Appliance):
     """
     String formatter service.
     """
 
-    @classmethod
-    @functools.cache
-    def singleton(cls) -> "FileSystem":
-        return cls()
+    __requirements = Appliance.Requirements(
+        filesyste = FileSystem
+    )
 
     def dumps(self, obj: any) -> str:
         import json

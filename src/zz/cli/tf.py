@@ -2,7 +2,7 @@ import asyncio
 
 import click
 
-from zerotk.wiring import Appliances
+from zerotk.appliance import Appliances
 
 
 @click.group(name="tf")
@@ -40,14 +40,11 @@ async def tf_plan(deployments, skip_init, skip_plan, verbose):
 
     # NOTE: We want to use the same instance of the planner to use and reuse the caches.
     planner = TerraformPlanner(appliances=appliances)
-    result = await planner.generate_reports(deployments)
+    result = await planner.generate_reports(deployments, skip_init=skip_init, skip_plan=skip_plan)
 
     console.title("Terraform changes report")
     for i in result:
         planner.print_report(i)
-    # for i_task in asyncio.as_completed(tasks):
-    #     r = await i_task
-    #     print(f"Details of task x {r}")
 
 
 @main.command()

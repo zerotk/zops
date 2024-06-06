@@ -2,18 +2,16 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
-import attrs
-
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 from zz.services.template_engine import TemplateEngine
-from zerotk.wiring import Appliance, Dependency, Requirements
+from zerotk.appliance import Appliance
 
 
-@attrs.define
+@Appliance.define
 class CodegenEngine(Appliance):
 
-    injector = Requirements(
+    __requirements__ = Appliance.Requirements(
         filesystem = FileSystem,
         template_engine = TemplateEngine,
         console = Console,
