@@ -113,9 +113,9 @@ class Console(Appliance):
         self,
         message: str,
         verbosity: int = 0,
-        indent: int = 0,
+        **kwargs,
     ):
-        style = self.STYLES["warning"].copy()
+        style = self.STYLES["warning"]
         style = attrs.evolve(style, **kwargs)
         self._print(message=message, style=style)
 
@@ -123,9 +123,9 @@ class Console(Appliance):
         self,
         message: str,
         verbosity: int = 0,
-        indent: int = 0,
+        **kwargs,
     ):
-        style = self.STYLES["error"].copy()
+        style = self.STYLES["error"]
         style = attrs.evolve(style, **kwargs)
         self._print(message=message, style=style)
 
