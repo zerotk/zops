@@ -2,29 +2,17 @@ import functools
 from typing import Any
 
 import boto3
+from zerotk.appliance import Appliance
 
 
-class AwsProvider:
+@Appliance.define
+class AwsProvider(Appliance):
     """
     Encapsulate access to AWS API so we can mock it for testing.
     """
 
-    def __init__(self, profile: str, region: str):
-        self.__profile: str = profile
-        self.__region: str = region
-
-    @classmethod
-    @functools.cache
-    def singleton(cls, profile: str, region: str) -> "AwsProvider":
-        return cls(profile, region)
-
-    @property
-    def profile(self) -> str:
-        return self.__profile
-
-    @property
-    def region(self) -> str:
-        return self.__region
+    profile: str
+    region: str
 
     @property
     def session(self) -> boto3.Session:

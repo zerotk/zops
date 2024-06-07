@@ -20,7 +20,7 @@ class Appliances:
 
     def _record(self, name, dep):
         path = ".".join(self._name)
-        self._tree.append(f"{path}.{name}: {dep._class.__name__}")
+        self._tree.append(f"{path}.{name}: {dep.get_name()}")
 
     def tree(self):
         return self._tree
@@ -44,7 +44,22 @@ class Appliance:
 
     define = attrs.define
 
-    class Dependency:
+
+    class Requirements:
+
+        def __init__(self, **dependencies):
+            self.dependencies = collections.OrderedDict()
+            for i_name, i_dep in dependencies.items():
+                if not isinstance(i_dep, Appliance._Base):
+                    i_dep = Appliance.Dependency(i_dep)
+                self.dependencies[i_name] = i_dep
+
+
+    class _Base:
+        pass
+
+
+    class Dependency(_Base):
 
         def __init__(self, class_, *args, **kwargs):
             self._class = class_
@@ -52,7 +67,10 @@ class Appliance:
             self._kwargs = kwargs
 
         def __repr__(self):
-            return f"{self.__class__.__name__}[{self._class}]"
+            return f"<Dependency[{self._class}]>"
+
+        def get_name(self):
+            return self._class.__name__
 
         def create(self, **kwargs):
             # Values passed during creation overwrite the default ones in the dependency declartion.
@@ -60,14 +78,22 @@ class Appliance:
             return self._class(*self._args, **self._kwargs)
 
 
-    class Requirements:
+    class Factory(_Base):
 
-        def __init__(self, **dependencies):
-            self.dependencies = collections.OrderedDict()
-            for i_name, i_dep in dependencies.items():
-                if not isinstance(i_dep, Appliance.Dependency):
-                    i_dep = Appliance.Dependency(i_dep)
-                self.dependencies[i_name] = i_dep
+        def __init__(self, class_):
+            self._class = class_
+
+        def __repr__(self):
+            return f"<Factory[{self._class.__name__}]>"
+
+        def get_name(self):
+            return self._class.__name__
+
+        def create(self, **kwargs):
+            return self
+
+        def __call__(self, *args, **kwargs):
+            return self._class(*args, **kwargs)
 
 
     __requirements__ = Requirements()
