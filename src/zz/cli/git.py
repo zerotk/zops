@@ -17,8 +17,9 @@ def plan() -> None:
 
 
 async def git_st():
-    from zz.services.git import Git
     import pathlib
+
+    from zz.services.git import Git
 
     directory = pathlib.Path(".")
     git = Git()

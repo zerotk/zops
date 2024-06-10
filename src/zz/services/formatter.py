@@ -10,9 +10,7 @@ class Formatter(Appliance):
     String formatter service.
     """
 
-    __requirements = Appliance.Requirements(
-        filesyste = FileSystem
-    )
+    __requirements = Appliance.Requirements(filesyste=FileSystem)
 
     def dumps(self, obj: any) -> str:
         import json

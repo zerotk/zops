@@ -1,4 +1,5 @@
 import pathlib
+
 from zerotk.appliance import Appliance
 
 
@@ -20,7 +21,6 @@ class SubProcess(Appliance):
         def is_error(self):
             return self.retcode != 0
 
-
     def call(self, *args, **kwargs) -> int:
         import subprocess
 
@@ -37,7 +37,9 @@ class SubProcess(Appliance):
             stdout=subprocess.PIPE,
         )
 
-    async def run_async(self, cmd_line: str, cwd: pathlib.Path = None) -> tuple[int ,str]:
+    async def run_async(
+        self, cmd_line: str, cwd: pathlib.Path = None
+    ) -> tuple[int, str]:
         import asyncio
 
         proc = await asyncio.create_subprocess_shell(

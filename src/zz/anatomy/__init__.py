@@ -1,14 +1,14 @@
+from zerotk.appliance import Appliance
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
-from zerotk.appliance import Appliance
 
 
 @Appliance.define
 class AnatomyEngine(Appliance):
 
     __requirements__ = Appliance.Requirements(
-        filesystem = FileSystem,
-        console = Console,
+        filesystem=FileSystem,
+        console=Console,
     )
 
     def run(self, directory):

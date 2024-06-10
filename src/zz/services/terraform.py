@@ -1,5 +1,6 @@
-from .subprocess import SubProcess
 from zerotk.appliance import Appliance
+
+from .subprocess import SubProcess
 
 
 @Appliance.define
@@ -9,7 +10,7 @@ class Terraform(Appliance):
     """
 
     __requirements__ = Appliance.Requirements(
-        subprocess = SubProcess,
+        subprocess=SubProcess,
     )
 
     def run(self, cmd, cwd: str, *args) -> None:

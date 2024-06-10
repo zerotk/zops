@@ -1,10 +1,13 @@
-import functools
-from zerotk.appliance import Appliance
-from .filesystem import FileSystem
-from .console import Console
-from .subprocess import SubProcess
-import attrs
 import asyncio
+import functools
+
+import attrs
+
+from zerotk.appliance import Appliance
+
+from .console import Console
+from .filesystem import FileSystem
+from .subprocess import SubProcess
 
 
 @Appliance.define
@@ -14,12 +17,14 @@ class Git(Appliance):
     """
 
     __requirements__ = Appliance.Requirements(
-        console = Console,
-        filesystem = FileSystem,
-        subprocess = SubProcess,
+        console=Console,
+        filesystem=FileSystem,
+        subprocess=SubProcess,
     )
 
-    async def status_report(self, directory: FileSystem.Path = FileSystem.Path.cwd()) -> None:
+    async def status_report(
+        self, directory: FileSystem.Path = FileSystem.Path.cwd()
+    ) -> None:
 
         def is_enabled(path: FileSystem.Path):
             i_part = path
@@ -43,7 +48,6 @@ class Git(Appliance):
         await asyncio.gather(*functions)
         self.console.clear_blocks()
 
-
     async def git_st(self, directory, semaphore):
         self.console.create_block(directory, f"[white]{directory}[/white]: ...")
         async with semaphore:
@@ -52,14 +56,20 @@ class Git(Appliance):
             r = await self.subprocess.run_async("hub sync", cwd=directory)
             status = r.output.split("\n")[0]
             if r.retcode != 0:
-                self.console.update_block(directory, f"[white]{directory}[/white]: [red]sync[/red]")
+                self.console.update_block(
+                    directory, f"[white]{directory}[/white]: [red]sync[/red]"
+                )
                 return
 
             self.console.update_block(directory, f"[white]{directory}[/white]: status")
 
             r = await self.subprocess.run_async("git status -b -s", cwd=directory)
             if r.retcode != 0:
-                self.console.update_block(directory, f"[white]{directory}[/white]: [red]status[/red]")
+                self.console.update_block(
+                    directory, f"[white]{directory}[/white]: [red]status[/red]"
+                )
 
             status = r.output.split("\n")[0]
-            self.console.update_block(directory, f"[white]{directory}[/white]: {status}")
+            self.console.update_block(
+                directory, f"[white]{directory}[/white]: {status}"
+            )

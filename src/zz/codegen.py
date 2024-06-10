@@ -2,19 +2,19 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
+from zerotk.appliance import Appliance
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 from zz.services.template_engine import TemplateEngine
-from zerotk.appliance import Appliance
 
 
 @Appliance.define
 class CodegenEngine(Appliance):
 
     __requirements__ = Appliance.Requirements(
-        filesystem = FileSystem,
-        template_engine = TemplateEngine,
-        console = Console,
+        filesystem=FileSystem,
+        template_engine=TemplateEngine,
+        console=Console,
     )
 
     def run(self, directory):

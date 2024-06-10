@@ -1,7 +1,9 @@
 from collections import OrderedDict
-from zerotk.appliance import Appliance
-from rich.console import Console
+
 import attrs
+from rich.console import Console
+
+from zerotk.appliance import Appliance
 
 
 @Appliance.define
@@ -133,24 +135,24 @@ class Console(Appliance):
         message = style.format_message(message)
         self._console.print(message)
 
-#     def _format_message(self, message: str, prefix: str, indent: int, style: str):
-#         result = self._prefix(prefix, indent=indent) + str(message)
-#         return result
-#
-#     def _prefix(
-#         self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
-#     ) -> str:
-#         result = self.INDENTATION_TEXT * indent
-#         if prefix is not None:
-#             result += prefix + separator
-#         return result
-#
-#     def secho(self, message: str, verbosity: int = 0) -> None:
-#
-#         if self.verbose_level < verbosity:
-#             return
-#
-#         self._console.print(message, highlight=False)
+    #     def _format_message(self, message: str, prefix: str, indent: int, style: str):
+    #         result = self._prefix(prefix, indent=indent) + str(message)
+    #         return result
+    #
+    #     def _prefix(
+    #         self, prefix: str, indent: int = 0, separator: str = SEPARATOR_CHAR
+    #     ) -> str:
+    #         result = self.INDENTATION_TEXT * indent
+    #         if prefix is not None:
+    #             result += prefix + separator
+    #         return result
+    #
+    #     def secho(self, message: str, verbosity: int = 0) -> None:
+    #
+    #         if self.verbose_level < verbosity:
+    #             return
+    #
+    #         self._console.print(message, highlight=False)
 
     def create_block(self, block_id, text):
         assert block_id not in self._blocks

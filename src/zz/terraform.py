@@ -1,9 +1,10 @@
 import asyncio
 import pathlib
+
 import addict
 
-from zerotk.text import dedent
 from zerotk.appliance import Appliance
+from zerotk.text import dedent
 from zz.services.caches import Caches
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
@@ -31,14 +32,18 @@ class TerraformPlanner(Appliance):
     class ExecutionError(RuntimeError):
         pass
 
-    async def generate_reports(self, deployments_seeds, skip_init=False, skip_plan=False):
+    async def generate_reports(
+        self, deployments_seeds, skip_init=False, skip_plan=False
+    ):
         deployments, workdirs = self._list_deployments(deployments_seeds)
 
         result = []
 
         # Initialize each workdir only once
         self.console.title("Initializing (terraform init)")
-        init_functions = [self._run_init(i_workdir, skip_init=skip_init) for i_workdir in workdirs]
+        init_functions = [
+            self._run_init(i_workdir, skip_init=skip_init) for i_workdir in workdirs
+        ]
         await asyncio.gather(*init_functions)
         self.console.clear_blocks()
 
@@ -91,14 +96,16 @@ class TerraformPlanner(Appliance):
             self.console.update_block(title, f"waiting for {workdir}")
             async with semaphore:
                 self.console.update_block(title, "plan")
-                tf_plan = await self._run_plan(workdir, deployment, workspace, skip_plan)
+                tf_plan = await self._run_plan(
+                    workdir, deployment, workspace, skip_plan
+                )
 
             self.console.update_block(title, "report")
             result = addict.Dict(
-                deployment = deployment,
-                workspace = workspace,
-                workdir = workdir,
-                changes = await self._generate_changes(workdir, tf_plan),
+                deployment=deployment,
+                workspace=workspace,
+                workdir=workdir,
+                changes=await self._generate_changes(workdir, tf_plan),
             )
             count = len(result["changes"])
             if count == 0:
@@ -133,7 +140,11 @@ class TerraformPlanner(Appliance):
         return not r.is_error()
 
     async def _run_plan(
-        self, workdir: pathlib.Path, deployment: str, workspace: str, skip_plan: bool = False
+        self,
+        workdir: pathlib.Path,
+        deployment: str,
+        workspace: str,
+        skip_plan: bool = False,
     ) -> None:
         bin_plan = "bin/plan"
         tfplan_bin = f".terraform/{deployment}.tfplan.bin"
@@ -192,7 +203,7 @@ class TerraformPlanner(Appliance):
     def _get_change_format(self, filename: str, change: str):
         r_format = "white"
         r_comment = ""
-        if (change.startswith("+/-") or change.startswith("-/+")):
+        if change.startswith("+/-") or change.startswith("-/+"):
             r_format = "white"
         elif change.startswith("-"):
             r_format = "red"
@@ -271,9 +282,9 @@ class TerraformConfig(Appliance):
     """
 
     __requirements__ = Appliance.Requirements(
-        caches = Caches,
-        filesystem = FileSystem,
-        subprocess = SubProcess,
+        caches=Caches,
+        filesystem=FileSystem,
+        subprocess=SubProcess,
     )
 
     workdir: FileSystem.Path
@@ -288,7 +299,9 @@ class TerraformConfig(Appliance):
             raw_modules = self.filesystem.read_json(modules_filename)
             raw = {}
             for i_module in raw_modules.Modules:
-                raw[i_module.Key] = await self._terraform_config_inspect(workdir / i_module.Dir)
+                raw[i_module.Key] = await self._terraform_config_inspect(
+                    workdir / i_module.Dir
+                )
             result = raw.get(module, (None, None))
             self.caches.set("TerraforConfig._modules", cache_key, result)
 
