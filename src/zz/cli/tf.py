@@ -14,6 +14,11 @@ class TerraformCli(Command):
         console=Console,
     )
 
+    @click.command("plan")
+    @click.argument("deployments", nargs=-1)
+    @click.option("--skip-init", is_flag=True)
+    @click.option("--skip-plan", is_flag=True)
+    @click.option("--verbose", is_flag=True)
     def plan(
         self,
         deployments: list[str],
@@ -31,9 +36,9 @@ class TerraformCli(Command):
         Eg.:
         tf plan t3can-stage apps/t3can:t3can-stage apps/t3can:t3can-stage|stage
         """
-        asyncio.run(self.tf_plan(deployments, skip_init, skip_plan, verbose))
+        asyncio.run(self._tf_plan(deployments, skip_init, skip_plan, verbose))
 
-    async def tf_plan(self, deployments, skip_init, skip_plan, verbose):
+    async def _tf_plan(self, deployments, skip_init, skip_plan, verbose):
         from zz.services.console import Console
         from zz.terraform import TerraformPlanner
 
@@ -50,6 +55,7 @@ class TerraformCli(Command):
         for i in result:
             planner.print_report(i)
 
+    @click.command("apply")
     def apply(self):
         """
         Terraform apply with support to multiple terraform strategies.

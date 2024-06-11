@@ -1,6 +1,7 @@
 import attrs
 import collections
 import click
+import types
 
 
 class Appliances:
@@ -106,67 +107,70 @@ class Appliance:
 
 class Command(Appliance):
 
-    @classmethod
-    def as_click_command(cls, method, name=None, command_class=click.Command):
-        import click
-        import inspect
-        import pathlib
+    # @classmethod
+    # def as_click_command(cls, method, name=None, command_class=click.Command):
+    #     import click
+    #     import inspect
+    #     import pathlib
 
-        name = name or method
+    #     name = name or method
 
-        appliances = Appliances()
-        app = cls(appliances=appliances)
-        callback = getattr(app, method)
+    #     appliances = Appliances()
+    #     app = cls(appliances=appliances)
+    #     callback = getattr(app, method)
 
-        signature = inspect.signature(callback)
-        params = []
-        for i_name, i_parameter in signature.parameters.items():
-            parameter_class = click.Argument
-            parameter_kwargs = {
-                "param_decls": [i_name],
-                "type": i_parameter.annotation,
-                "default": i_parameter.default,
-            }
-            match i_parameter.annotation.__name__:
-                case "Path":
-                    parameter_kwargs["type"] = click.Path()
-                case "list":
-                    parameter_kwargs["type"] = i_parameter.annotation
-                case "bool":
-                    parameter_class = click.Option
-                    parameter_kwargs["is_flag"] = True
-                    option_name = "--" + i_name.replace("_", "-")
-                    parameter_kwargs["param_decls"] = [option_name]
-                case _:
-                    raise TypeError(i_parameter.annotation.__name__)
+    #     signature = inspect.signature(callback)
+    #     params = []
+    #     for i_name, i_parameter in signature.parameters.items():
+    #         parameter_class = click.Argument
+    #         parameter_kwargs = {
+    #             "param_decls": [i_name],
+    #             "type": i_parameter.annotation,
+    #             "default": i_parameter.default,
+    #         }
+    #         match i_parameter.annotation.__name__:
+    #             case "Path":
+    #                 parameter_kwargs["type"] = click.Path()
+    #             case "list":
+    #                 parameter_kwargs["type"] = i_parameter.annotation
+    #             case "bool":
+    #                 parameter_class = click.Option
+    #                 parameter_kwargs["is_flag"] = True
+    #                 option_name = "--" + i_name.replace("_", "-")
+    #                 parameter_kwargs["param_decls"] = [option_name]
+    #             case _:
+    #                 raise TypeError(i_parameter.annotation.__name__)
 
-            p = parameter_class(**parameter_kwargs)
-            params.append(p)
+    #         p = parameter_class(**parameter_kwargs)
+    #         params.append(p)
 
-        result = command_class(
-            name=name,
-            callback=callback,
-            params=params,
-        )
-        return result
+    #     result = command_class(
+    #         name=name,
+    #         callback=callback,
+    #         params=params,
+    #     )
+    #     return result
 
-    def madin(self):
-        click_cmd = self.as_click_command("__main__", command_class=click.Group)
+    # def madin(self):
+    #     click_cmd = self.as_click_command("__main__", command_class=click.Group)
 
-        for i_name in self.__requirements__.dependencies:
-            app = getattr(self, i_name)
-            if not isinstance(app, Command):
-                continue
-            click_cmd.add_command(app.as_click_command("__run__"), name=i_name)
-        return click_cmd.main()
+    #     for i_name in self.__requirements__.dependencies:
+    #         app = getattr(self, i_name)
+    #         if not isinstance(app, Command):
+    #             continue
+    #         click_cmd.add_command(app.as_click_command("__run__"), name=i_name)
+    #     return click_cmd.main()
 
     def initialize_cli(self):
-        for i_name in self.__requirements__.dependencies:
-            app = getattr(self, i_name)
-            if not isinstance(app, Command):
-                continue
-            click_command = app.__class__.run
-            print(click_command)
-            print(click_command.callback)
-            print(app.other)
-            self.main.add_command(click_command, i_name)
+        appliance_commands = [self] + [
+            getattr(self, i)
+            for i
+            in self.__requirements__.dependencies
+            if isinstance(getattr(self, i), Command)
+        ]
+        for i_command in appliance_commands:
+            for j_method in dir(i_command):
+                click_command = getattr(i_command, j_method)
+                if not isinstance(click_command, click.BaseCommand):
+                    continue
+                click_command.callback = types.MethodType(click_command.callback, i_command)

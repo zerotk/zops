@@ -25,7 +25,7 @@ def main():
 
         __requirements__ = Command.Requirements(
             codegen=codegen.CodegenCli,
-            # tf=tf.TerraformCli,
+            tf=tf.TerraformCli,
         )
 
         @click.group()
