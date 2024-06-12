@@ -162,15 +162,29 @@ class Command(Appliance):
     #     return click_cmd.main()
 
     def initialize_cli(self):
-        appliance_commands = [self] + [
-            getattr(self, i)
-            for i
-            in self.__requirements__.dependencies
-            if isinstance(getattr(self, i), Command)
-        ]
-        for i_command in appliance_commands:
-            for j_method in dir(i_command):
-                click_command = getattr(i_command, j_method)
-                if not isinstance(click_command, click.BaseCommand):
-                    continue
-                click_command.callback = types.MethodType(click_command.callback, i_command)
+        appliance_commands = {
+            i_name: getattr(self, i_name)
+            for i_name, _dep
+            in self.__requirements__.dependencies.items()
+            if isinstance(getattr(self, i_name), Command)
+        }
+
+        result = self._fix_command("main", self)
+        for i_name, i_app in appliance_commands.items():
+            click_group = self._fix_command(i_name, i_app)
+            result.add_command(click_group)
+        return result
+
+    def _fix_command(self, name, appliance_command):
+        result = click.Group(name)
+        for j_method in dir(appliance_command):
+            click_command = getattr(appliance_command, j_method)
+            if not isinstance(click_command, click.BaseCommand):
+                continue
+            click_command.callback = types.MethodType(click_command.callback, appliance_command)
+            result.add_command(click_command)
+        return result
+    
+    def main(self):
+        click_command = self.initialize_cli()
+        return click_command.main()

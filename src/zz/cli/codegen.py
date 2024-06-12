@@ -15,8 +15,8 @@ class CodegenCli(Command):
     )
 
     @click.command()
-    @click.argument("directory", type=click.Path())
-    def run(self, directory: pathlib.Path = "."):
+    @click.argument("directory", type=click.Path(), default=".")
+    def apply(self, directory: pathlib.Path = "."):
         self.codegen.run(directory)
         self.anatomy.run(directory)
 
