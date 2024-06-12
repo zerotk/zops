@@ -3,6 +3,7 @@ from typing import Iterable
 from typing import Tuple
 
 from .filesystem import FileSystem
+from zerotk.appliance import Appliance
 
 
 class Formatter(Appliance):
@@ -10,7 +11,7 @@ class Formatter(Appliance):
     String formatter service.
     """
 
-    __requirements = Appliance.Requirements(filesyste=FileSystem)
+    __requirements__ = Appliance.Requirements(filesyste=FileSystem)
 
     def dumps(self, obj: any) -> str:
         import json
