@@ -2,16 +2,16 @@ import functools
 from typing import Iterable
 from typing import Tuple
 
-from .filesystem import FileSystem
+from .console import Console
 from zerotk.appliance import Appliance
 
-
+@Appliance.define
 class Formatter(Appliance):
     """
     String formatter service.
     """
 
-    __requirements__ = Appliance.Requirements(filesyste=FileSystem)
+    __requirements__ = Appliance.Requirements(console=Console)
 
     def dumps(self, obj: any) -> str:
         import json
@@ -42,11 +42,6 @@ class Formatter(Appliance):
         r_type = r_type or "String"
         return r_name, r_type, r_value
 
-    def print(self, message: str, indent=0) -> None:
-        import click
-
-        click.echo(click.style(" " * (indent * 2) + message, fg="cyan"))
-
     def print_items(
         self, items: Iterable[str], indent: int = 0, item_format: str = ""
     ) -> None:
@@ -54,8 +49,8 @@ class Formatter(Appliance):
             items = [dict(name=i, value=j) for i, j in sorted(items.items())]
         for i in items:
             if item_format == "":
-                self.print(f"* {i}")
+                self.console.item(f"{i}")
                 continue
             if hasattr(i, "as_dict"):
                 i = i.as_dict()
-            self.print(item_format.format(**i))
+            self.console.item(item_format.format(**i), indent=indent)

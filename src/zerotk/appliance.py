@@ -9,29 +9,29 @@ class Appliances:
     def __init__(self, **appliances):
         self.__appliances = appliances
         self._tree = []
-        self._name = ["<root>"]
+        self._name = []
 
     def __repr__(self):
-        return f"<{self._name}>"
+        return f"<{id(self)}>"
 
     def get(self, name):
         return self.__appliances.get(name)
 
     def set(self, name, app):
+        if isinstance(app, Command):
+            return
         self.__appliances[name] = app
 
-    def _record(self, name, dep):
-        path = ".".join(self._name)
-        self._tree.append(f"{path}.{name}: {dep.get_name()}")
+    def _tree_record(self, name, dep):
+        path = ".".join(self._name + [name])
+        self._tree.append(f"{path} = {dep.get_name()}")
 
     def tree(self):
         return self._tree
 
     def initialize(self, obj, requirements):
-        # print(f"DEBUG: initialize: {obj}")
         for i_name, i_dep in requirements.dependencies.items():
-            # print(f"DEBUG: initialize.{i_name} = {i_dep}")
-            self._record(i_name, i_dep)
+            self._tree_record(i_name, i_dep)
             app = self.get(i_name)
             if app is None:
                 self._name.append(i_name)
@@ -82,19 +82,21 @@ class Appliance:
     class Factory(_Base):
 
         def __init__(self, class_):
-            self._class = class_
+            self.__class = class_
+            self.__appliances = None
 
         def __repr__(self):
-            return f"<Factory[{self._class.__name__}]>"
+            return f"<Factory[{self.__class.__name__}]>"
 
         def get_name(self):
-            return self._class.__name__
+            return self.__class.__name__
 
-        def create(self, **kwargs):
+        def create(self, appliances, **kwargs):
+            self.__appliances = appliances
             return self
 
         def __call__(self, *args, **kwargs):
-            return self._class(*args, **kwargs)
+            return self.__class(appliances=self.__appliances, *args, **kwargs)
 
     __requirements__ = Requirements()
     appliances: Appliances = None
@@ -107,61 +109,7 @@ class Appliance:
 
 class Command(Appliance):
 
-    # @classmethod
-    # def as_click_command(cls, method, name=None, command_class=click.Command):
-    #     import click
-    #     import inspect
-    #     import pathlib
-
-    #     name = name or method
-
-    #     appliances = Appliances()
-    #     app = cls(appliances=appliances)
-    #     callback = getattr(app, method)
-
-    #     signature = inspect.signature(callback)
-    #     params = []
-    #     for i_name, i_parameter in signature.parameters.items():
-    #         parameter_class = click.Argument
-    #         parameter_kwargs = {
-    #             "param_decls": [i_name],
-    #             "type": i_parameter.annotation,
-    #             "default": i_parameter.default,
-    #         }
-    #         match i_parameter.annotation.__name__:
-    #             case "Path":
-    #                 parameter_kwargs["type"] = click.Path()
-    #             case "list":
-    #                 parameter_kwargs["type"] = i_parameter.annotation
-    #             case "bool":
-    #                 parameter_class = click.Option
-    #                 parameter_kwargs["is_flag"] = True
-    #                 option_name = "--" + i_name.replace("_", "-")
-    #                 parameter_kwargs["param_decls"] = [option_name]
-    #             case _:
-    #                 raise TypeError(i_parameter.annotation.__name__)
-
-    #         p = parameter_class(**parameter_kwargs)
-    #         params.append(p)
-
-    #     result = command_class(
-    #         name=name,
-    #         callback=callback,
-    #         params=params,
-    #     )
-    #     return result
-
-    # def madin(self):
-    #     click_cmd = self.as_click_command("__main__", command_class=click.Group)
-
-    #     for i_name in self.__requirements__.dependencies:
-    #         app = getattr(self, i_name)
-    #         if not isinstance(app, Command):
-    #             continue
-    #         click_cmd.add_command(app.as_click_command("__run__"), name=i_name)
-    #     return click_cmd.main()
-
-    def initialize_cli(self):
+    def _initialize(self):
         appliance_commands = {
             i_name: getattr(self, i_name)
             for i_name, _dep
@@ -186,5 +134,5 @@ class Command(Appliance):
         return result
     
     def main(self):
-        click_command = self.initialize_cli()
+        click_command = self._initialize()
         return click_command.main()

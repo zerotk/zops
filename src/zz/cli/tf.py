@@ -2,9 +2,10 @@ import asyncio
 
 import click
 
-from zerotk.appliance import Appliance, Command
+from zerotk.appliance import Command
 from zerotk.appliance import Appliances
 from zz.services.console import Console
+from zz.services.subprocess import SubProcess
 
 
 @Command.define
@@ -12,6 +13,7 @@ class TerraformCli(Command):
 
     __requirements__ = Command.Requirements(
         console=Console,
+        subprocess=SubProcess,
     )
 
     @click.command("plan")
@@ -54,6 +56,11 @@ class TerraformCli(Command):
         console.title("Terraform changes report")
         for i in result:
             planner.print_report(i)
+        
+        for i_log in self.subprocess.execution_logs:
+            if i_log.is_error():
+                console.title(f"{i_log.cmd_line} (retcode: {i_log.retcode})")
+                # console._print(i_log.output)
 
     @click.command("apply")
     def apply(self):

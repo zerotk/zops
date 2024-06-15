@@ -33,7 +33,7 @@ class Console(Appliance):
 
     @attrs.define
     class ConsoleStyle:
-        color: str = "white"
+        color: str = "reset"
         prefix: str = ""
         prefix_sep: str = " "
         indent: int = 0
@@ -51,7 +51,7 @@ class Console(Appliance):
         ),
         "item": ConsoleStyle(
             color="white",
-            prefix="\U0001F784",
+            prefix="*",  # "\U0001F784",
         ),
         "info": ConsoleStyle(
             color="white",
@@ -68,6 +68,9 @@ class Console(Appliance):
         "error": ConsoleStyle(
             color="red",
             prefix="\U0001F6C7",
+        ),
+        "todo": ConsoleStyle(
+            prefix="[yellow]TODO:[yellow]",
         ),
     }
 
@@ -128,6 +131,16 @@ class Console(Appliance):
         **kwargs,
     ):
         style = self.STYLES["error"]
+        style = attrs.evolve(style, **kwargs)
+        self._print(message=message, style=style)
+
+    def todo(
+        self,
+        message: str,
+        verbosity: int = 0,
+        **kwargs,
+    ):
+        style = self.STYLES["todo"]
         style = attrs.evolve(style, **kwargs)
         self._print(message=message, style=style)
 

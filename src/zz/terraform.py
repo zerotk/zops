@@ -91,7 +91,12 @@ class TerraformPlanner(Appliance):
         semaphore: asyncio.Semaphore = None,
     ):
         workspace = workspace or deployment
-        result = {}
+        result = addict.Dict(
+            deployment=deployment,
+            workspace=workspace,
+            workdir=workdir,
+            changes=[],
+        )
         try:
             self.console.update_block(title, f"waiting for {workdir}")
             async with semaphore:
@@ -112,9 +117,11 @@ class TerraformPlanner(Appliance):
                 self.console.update_block(title, "[green]no changes[/green]")
             else:
                 self.console.update_block(title, f"[yellow]{count} change(s)[/yellow]")
-        except self.ExecutionError:
-            self.console.update_block(title, "[red]error[/red]")
-
+        except self.ExecutionError as e:
+            self.console.update_block(title, f"[red]error:[/red] {e.__class__.__name__}")
+        except Exception as e:
+            self.console.update_block(title, f"[red]error:[/red] {e.__class__.__name__}")
+            raise
         return result
 
     async def _run_init(self, workdir: pathlib.Path, skip_init: bool = False) -> bool:
@@ -299,9 +306,14 @@ class TerraformConfig(Appliance):
             raw_modules = self.filesystem.read_json(modules_filename)
             raw = {}
             for i_module in raw_modules.Modules:
-                raw[i_module.Key] = await self._terraform_config_inspect(
-                    workdir / i_module.Dir
-                )
+                try:
+                    raw[i_module.Key] = await self._terraform_config_inspect(
+                        workdir / i_module.Dir
+                    )
+                except Exception as e:
+                    raise RuntimeError(
+                        f"While loading terraform configuration for module: {modules_filename}"
+                    ) from e
             result = raw.get(module, (None, None))
             self.caches.set("TerraforConfig._modules", cache_key, result)
 

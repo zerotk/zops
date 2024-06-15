@@ -76,3 +76,6 @@ class AwsProvider(Appliance):
                     j_parameter.get("Type"),
                 )
         return result
+
+    def list_profiles(self):
+        self.session.available_profiles
