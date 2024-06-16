@@ -43,7 +43,7 @@ class AwsCli(Command):
             result,
             header="Available cloud profiles"
         )
-        pprint(self.appliances.tree())
+        pprint(self.appliances.tree.items)
         return result
 
         # from zz.services.aws_provider import AwsProvider
