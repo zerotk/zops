@@ -171,7 +171,7 @@ class Command(Appliance):
             click_command.callback = types.MethodType(click_command.callback, appliance_command)
             result.add_command(click_command)
         return result
-    
+
     def main(self):
         click_command = self._initialize_commands()
         return click_command.main()
