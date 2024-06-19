@@ -1,1 +1,1 @@
-from ._deps import Declarations, Deps, Singleton, Factory, define, field
+from ._deps import Declarations, Deps, Singleton, Command, Factory, define, field

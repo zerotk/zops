@@ -1,4 +1,6 @@
 from zerotk import deps
+import click
+import pytest
 
 
 def test_deps():
@@ -65,7 +67,7 @@ def test_sub_object():
     alpha = deps.Singleton(Alpha)
 
   b = Bravo()
-  assert list(b.deps.declarations) == ["alpha"]
+  assert list(b.deps.declarations.items()) == [("alpha", Bravo.alpha)]
   assert isinstance(b.alpha, Alpha)
 
 
@@ -138,6 +140,7 @@ def test_same_singleton_all_the_way_down():
   assert id(d.deps.shared) == id(d.parent.parent.deps.shared)
   assert id(d.deps.shared) == id(d.parent.parent.parent.deps.shared)
 
+  assert getattr(d.parent, "util", None) is None
   assert d.util is d.parent.parent.util
   assert d.util is d.parent.parent.parent.util
 
@@ -163,3 +166,50 @@ def test_factory():
   r = a.create_items(5)
   assert len(r) == 5
   assert isinstance(r[0], Item)
+
+
+def test_command():
+
+  @deps.define()
+  class Alpha:
+
+    @deps.Command
+    @click.argument("subject")
+    def test(self, subject):
+      """
+      This is a test command.
+      """
+      print(f"Hello, {subject}!")
+
+  a = Alpha()
+  with pytest.raises(SystemExit) as e:
+    a.test(["there"])
+    assert e.retcode == 0
+
+
+def test_sub_command():
+
+  @deps.define()
+  class Alpha:
+
+    @deps.Command
+    def test(self):
+      print(f"Hello from Alpha.")
+
+  @deps.define()
+  class Bravo:
+
+    alpha = deps.Command(Alpha)
+
+    @deps.Command
+    def main(self):
+      print("Hello from Bravo.")
+
+  b = Bravo()
+  with pytest.raises(SystemExit) as e:
+    b.main()
+    assert e.retcode == 0
+
+  assert list(b.deps.shared["Command"]) == ["alpha", "main"]
+
+test_sub_command()
