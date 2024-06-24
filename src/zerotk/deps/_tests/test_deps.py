@@ -193,7 +193,10 @@ def test_sub_command():
   class Alpha:
 
     @deps.Command
-    def test(self):
+    def test_alpha(self):
+      """
+      This is alpha.
+      """
       print(f"Hello from Alpha.")
 
   @deps.define()
@@ -202,14 +205,13 @@ def test_sub_command():
     alpha = deps.Command(Alpha)
 
     @deps.Command
-    def main(self):
+    def test_bravo(self):
+      """
+      This is bravo.
+      """
       print("Hello from Bravo.")
 
   b = Bravo()
   with pytest.raises(SystemExit) as e:
     b.main()
     assert e.retcode == 0
-
-  assert list(b.deps.shared["Command"]) == ["alpha", "main"]
-
-test_sub_command()

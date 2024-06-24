@@ -80,21 +80,20 @@ class Factory(Dependency):
 @attrs.define
 class Command(Dependency):
 
-  method: Any = None
+  callback: Any = None
 
   def create(self, obj, name):
+    """
+    Create a click.command and stores the in the shared dict for future reference.
+    (Is this really needed).
+    """
     import types
-    result = click.command(self.method)
-    result.callback = types.MethodType(result.callback, obj)
-
-    commands = obj.deps.shared.setdefault(self.__class__.__name__, dict())
-    commands[name] = result
-
+    if isinstance(self.callback, types.FunctionType):
+      result = click.command(self.callback)
+      result.callback = types.MethodType(result.callback, obj)
+    else:
+      result = self.callback(deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}"))
     return result
-
-  def main(self):
-    click_command = self._initialize_commands()
-    return click_command.main()
 
 
 # Deps
@@ -105,13 +104,16 @@ class Declarations:
     """
 
     def __init__(self):
-       self._items = dict()
+      self._items = dict()
 
     def add(self, name, decl):
-       self._items[name] = decl
+      self._items[name] = decl
 
-    def items(self):
-       return self._items.items()
+    def items(self):  # , filter_class=None):
+      result = self._items.items()
+      # if filter_class is not None:
+      #   result = [i for i in result if isinstance(i[1], filter_class)]
+      return result
 
 
 @attrs.define
@@ -151,6 +153,7 @@ def define(maybe_cls=None, **kwargs):
   def wrap(cls):
     cls.deps: Deps = attrs.field(factory=Deps)
     cls.__attrs_post_init__ = __attrs_post_init__
+    cls.main = __command_entry_point__
     return attrs.define(cls, slots=False, **kwargs)
 
   if maybe_cls is None:
@@ -160,6 +163,11 @@ def define(maybe_cls=None, **kwargs):
 
 
 def __attrs_post_init__(self):
+  """
+  Initializaion method for zerotk.deps. This is where the magic happens.
+  * Fill the instance declarations dictionary for later use;
+  * Create each attribute based in the declaration.
+  """
   for i_name, i_decl in self.__class__.__dict__.items():
     if not isinstance(i_decl, Dependency):
       continue
@@ -170,3 +178,29 @@ def __attrs_post_init__(self):
     if hasattr(attr, "deps"):
       attr.deps.name = f"{self.deps.name}.{i_name}"
     object.__setattr__(self, i_name, attr)
+
+
+def __command_entry_point__(self):
+  """
+  Entrypoint for command line
+  """
+
+  def get_commands(obj):
+    for i_name, i_decl in obj.deps.declarations.items():
+      if not isinstance(i_decl, Command):
+        continue
+      result = getattr(obj, i_name)
+      if isinstance(getattr(result, "deps", None), Deps):
+        result = create_group(result)
+      yield i_name, result
+
+  def create_group(obj):
+    @click.group
+    def result():
+      pass
+    for i_name, i_command in get_commands(obj):
+      result.add_command(i_command, name=i_name)
+    return result
+
+  result = create_group(self)
+  return result()
