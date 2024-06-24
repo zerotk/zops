@@ -169,13 +169,30 @@ def test_factory():
 
 
 def test_command():
-
   @deps.define()
   class Alpha:
 
     @deps.Command
     @click.argument("subject")
     def test(self, subject):
+      """
+      This is a test command.
+      """
+      print(f"Hello, {subject}!")
+
+  a = Alpha()
+  with pytest.raises(SystemExit) as e:
+    a.test(["there"])
+    assert e.retcode == 0
+
+def test_command_call():
+
+  @deps.define()
+  class Alpha:
+
+    @deps.Command("test")
+    @click.argument("subject", default="World")
+    def anything(self, subject):
       """
       This is a test command.
       """

@@ -2,20 +2,18 @@ from pathlib import Path
 from typing import Dict
 from typing import List
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 from zz.services.template_engine import TemplateEngine
 
 
-@Appliance.define
-class CodegenEngine(Appliance):
+@deps.define
+class CodegenEngine:
 
-    __requirements__ = Appliance.Requirements(
-        filesystem=FileSystem,
-        template_engine=TemplateEngine,
-        console=Console,
-    )
+    filesystem = deps.Singleton(FileSystem)
+    template_engine = deps.Singleton(TemplateEngine)
+    console = deps.Singleton(Console)
 
     def run(self, directory):
         playbooks = self.filesystem.Path(directory).rglob("*.codegen.yml")

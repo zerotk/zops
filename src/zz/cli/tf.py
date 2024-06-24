@@ -2,19 +2,16 @@ import asyncio
 
 import click
 
-from zerotk.appliance import Command
-from zerotk.appliance import Appliances
+from zerotk import deps
 from zz.services.console import Console
 from zz.services.subprocess import SubProcess
 
 
-@Command.define
-class TerraformCli(Command):
+@deps.define
+class TerraformCli:
 
-    __requirements__ = Command.Requirements(
-        console=Console,
-        subprocess=SubProcess,
-    )
+    console = deps.Singleton(Console)
+    subprocess = deps.Singleton(SubProcess)
 
     @click.command("plan")
     @click.argument("deployments", nargs=-1)

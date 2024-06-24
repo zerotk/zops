@@ -2,12 +2,11 @@ import functools
 from typing import Any
 
 import boto3
+from zerotk import deps
 
-from zerotk.appliance import Appliance
 
-
-@Appliance.define
-class AwsProvider(Appliance):
+@deps.define
+class AwsProvider:
     """
     Encapsulate access to AWS API so we can mock it for testing.
     """

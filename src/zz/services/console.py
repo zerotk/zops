@@ -3,11 +3,10 @@ from collections import OrderedDict
 import attrs
 from rich.console import Console
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 
-
-@Appliance.define
-class Console(Appliance):
+@deps.define
+class Console:
 
     TITLE_STYLE = "blue"
     EXECUTION_COLOR = "green"

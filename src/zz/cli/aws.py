@@ -1,17 +1,15 @@
 import click
-from zerotk.appliance import Command
-from zz.services.console import Console, Appliance
+from zerotk import deps
+from zz.services.console import Console
 from zz.services.aws_provider import AwsProvider
 from zz.services.aws import Aws
 from zz.services.cmd_wrapper import CommandWrapper
 
 
-@Appliance.define
-class Cloud(Appliance):
+@deps.define
+class Cloud:
 
-    __requirements__ = Appliance.Requirements(
-        aws = Aws,
-    )
+    aws = deps.Singleton(Aws)
 
     profile_name: str
 
@@ -19,18 +17,16 @@ class Cloud(Appliance):
         pass
 
 
-@Command.define
-class AwsCli(Command):
+@deps.define
+class AwsCli:
 
-    __requirements__ = Command.Requirements(
-        console = Console,
-        aws_provider = Command.Factory(AwsProvider),
-        aws = Aws,
-        cloud_factory = Command.Factory(Cloud),
-        cmd_wrapper = CommandWrapper
-    )
+    console = deps.Singleton(Console)
+    aws_provider = deps.Factory(AwsProvider)
+    aws = deps.Singleton(Aws)
+    cloud_factory = deps.Factory(Cloud)
+    cmd_wrapper = deps.Singleton(CommandWrapper)
 
-    @click.command("c")
+    @deps.Command("c")
     def cloud(self):
         """
         List registered cloud accounts profiles.
@@ -64,7 +60,7 @@ class AwsCli(Command):
             if i > 3:
                 break
 
-    @click.command("d")
+    @deps.Command("d")
     def deployments(self):
         """
         List registered deployments.
@@ -78,7 +74,7 @@ class AwsCli(Command):
             """
         )
 
-    @click.command("ec2.list")
+    @deps.Command("ec2.list")
     @click.argument("seed")
     def ec2_list(self, seed):
         """
@@ -88,70 +84,70 @@ class AwsCli(Command):
         cloud.list_ec2_instances()
         self.console.todo("ec2.list")
 
-    @click.command("ec2.shell")
+    @deps.Command("ec2.shell")
     def ec2_shell(self):
         """
         Shell into an ec2 instance.
         """
         self.console.todo("ec2.shell")
 
-    @click.command("ec2.start")
+    @deps.Command("ec2.start")
     def ec2_start(self):
         """
         Starts a stopped ec2 instance.
         """
         self.console.todo("ec2.start")
 
-    @click.command("ec2.stop")
+    @deps.Command("ec2.stop")
     def ec2_stop(self):
         """
         Stops a running ec2 instance.
         """
         self.console.todo("ec2.stop")
 
-    @click.command("params.list")
+    @deps.Command("params.list")
     def params_list(self):
         """
         List SSM Parameters.
         """
         pass
 
-    @click.command("params.get")
+    @deps.Command("params.get")
     def params_get(self):
         """
         Get the value of one or more SSM parameters.
         """
         pass
 
-    @click.command("params.set")
+    @deps.Command("params.set")
     def params_set(self):
         """
         Sets the value of one or more SSM Parameters.
         """
         pass
 
-    @click.command("ami.list")
+    @deps.Command("ami.list")
     def ami_list(self):
         """
         List AMI images.
         """
         pass
 
-    @click.command("ami.deregister")
+    @deps.Command("ami.deregister")
     def ami_build(self):
         """
         Deregister (delete) an AMI image.
         """
         pass
 
-    @click.command("asg.list")
+    @deps.Command("asg.list")
     def asg_list(self):
         """
         List ASGs (auto scaling groups).
         """
         pass
 
-    @click.command("asg.update")
+    @deps.Command("asg.update")
     def asg_update(self):
         """
         Updates an ASG (auto scaling group).

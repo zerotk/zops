@@ -1,11 +1,11 @@
 from collections import OrderedDict
 from collections.abc import MutableMapping
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 
-@Appliance.define
-class TemplateEngine(Appliance):
+@deps.define
+class TemplateEngine:
     """
     Provide an easy and centralized way to change how we expand templates.
     """

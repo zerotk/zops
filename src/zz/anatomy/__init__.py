@@ -1,15 +1,13 @@
-from zerotk.appliance import Appliance
+from zerotk import deps
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
 
 
-@Appliance.define
-class AnatomyEngine(Appliance):
+@deps.define
+class AnatomyEngine:
 
-    __requirements__ = Appliance.Requirements(
-        filesystem=FileSystem,
-        console=Console,
-    )
+    filesystem = deps.Singleton(FileSystem)
+    console = deps.Singleton(Console)
 
     def run(self, directory):
         playbooks = self.filesystem.Path(directory).rglob("anatomy-playbook.yml")

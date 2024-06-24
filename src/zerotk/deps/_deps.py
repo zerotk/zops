@@ -81,6 +81,7 @@ class Factory(Dependency):
 class Command(Dependency):
 
   callback: Any = None
+  name: str = deps.field(default=None)
 
   def create(self, obj, name):
     """
@@ -95,6 +96,17 @@ class Command(Dependency):
       result = self.callback(deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}"))
     return result
 
+
+def command(maybe_cls=None, **kwargs):
+  def wrap(callback):
+    return Command(callback)
+
+  if maybe_cls is None:
+      return wrap
+
+  return wrap(maybe_cls, **kwargs)
+
+  return Command(*args, **kargs)
 
 # Deps
 

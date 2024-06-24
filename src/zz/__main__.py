@@ -5,17 +5,14 @@ from zz.cli import tf
 
 
 def main():
-    from zerotk.appliance import Command
+    from zerotk import deps
+    @deps.define
+    class ZopsCli:
 
-    @Command.define
-    class ZopsCli(Command):
-
-        __requirements__ = Command.Requirements(
-            codegen=codegen.CodegenCli,
-            tf=tf.TerraformCli,
-            git=git.GitCli,
-            aws=aws.AwsCli,
-        )
+        codegen = deps.Command(codegen.CodegenCli)
+        tf = deps.Command(tf.TerraformCli)
+        git = deps.Command(git.GitCli)
+        aws = deps.Command(aws.AwsCli)
 
     cli = ZopsCli()
     return cli.main()

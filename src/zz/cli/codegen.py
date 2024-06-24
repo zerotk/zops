@@ -1,24 +1,19 @@
 import pathlib
 
-from zerotk.appliance import Command
+from zerotk import deps
 from zz.anatomy import AnatomyEngine
 from zz.codegen import CodegenEngine
 import click
 
 
-@Command.define
-class CodegenCli(Command):
+@deps.define
+class CodegenCli:
 
-    __requirements__ = Command.Requirements(
-        codegen=CodegenEngine,
-        anatomy=AnatomyEngine,
-    )
-
-    @click.command()
+    codegen = deps.Singleton(CodegenEngine)
+    anatomy = deps.Singleton(AnatomyEngine)
+ 
+    @deps.Command
     @click.argument("directory", type=click.Path(), default=".")
     def apply(self, directory: pathlib.Path = "."):
         self.codegen.run(directory)
         self.anatomy.run(directory)
-
-    def other(self):
-        pass

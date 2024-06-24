@@ -2,11 +2,11 @@ import pathlib
 from typing import Dict
 from typing import Iterable
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 
-@Appliance.define
-class FileSystem(Appliance):
+@deps.define
+class FileSystem:
     """
     Central point of access to file system to make tests easier.
     """
@@ -16,7 +16,6 @@ class FileSystem(Appliance):
     def iterdir(self, path: Path) -> Iterable:
         return path.iterdir()
 
-    @classmethod
     def read_hcl(cls, filename: Path) -> Dict:
         import hcl2
 
@@ -25,14 +24,12 @@ class FileSystem(Appliance):
         with filename.open("r") as file:
             return hcl2.load(file)
 
-    @classmethod
     def read_yaml(cls, filename: Path) -> Dict:
         import yaml
 
         with open(filename, "r") as iss:
             return yaml.safe_load(iss)
 
-    @classmethod
     def read_json(cls, filename: Path) -> Dict:
         import json
 
@@ -41,7 +38,6 @@ class FileSystem(Appliance):
         with open(filename, "r") as iss:
             return json.load(iss, object_hook=AttrDict)
 
-    @classmethod
     def read_json_string(cls, contents: str) -> Dict:
         import json
 

@@ -1,10 +1,10 @@
 import pathlib
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 
-@Appliance.define
-class SubProcess(Appliance):
+@deps.define
+class SubProcess:
     """
     Call external commands.
     """

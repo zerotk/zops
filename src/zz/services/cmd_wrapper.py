@@ -3,24 +3,21 @@ from typing import Any
 
 import boto3
 
-from zerotk.appliance import Appliance
+from zerotk import deps
 from zz.services.formatter import Formatter
 from zz.services.console import Console
 
 
-@Appliance.define
-class CommandWrapper(Appliance):
+@deps.define
+class CommandWrapper:
     """
     The idea here is to have both CLI and API with the same code.
 
     Is it possible?
     I don't know.
     """
-
-    __requirements__ = Appliance.Requirements(
-        formatter = Formatter,
-        console = Console,
-    )
+    formatter = deps.Singleton(Formatter)
+    console = deps.Singleton(Console)
 
     class Result:
         def __init__(self, header, items):

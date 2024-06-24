@@ -3,15 +3,16 @@ from typing import Iterable
 from typing import Tuple
 
 from .console import Console
-from zerotk.appliance import Appliance
+from zerotk import deps
 
-@Appliance.define
-class Formatter(Appliance):
+
+@deps.define
+class Formatter:
     """
     String formatter service.
     """
 
-    __requirements__ = Appliance.Requirements(console=Console)
+    console = deps.Singleton(Console)
 
     def dumps(self, obj: any) -> str:
         import json

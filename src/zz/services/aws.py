@@ -1,8 +1,8 @@
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 
-@Appliance.define
-class Aws(Appliance):
+@deps.define
+class Aws:
     """
     Encapsulate access to AWS API so we can mock it for testing.
     """
