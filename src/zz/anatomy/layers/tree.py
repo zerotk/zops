@@ -1,14 +1,18 @@
 import os
+import pathlib
 from collections import OrderedDict
 
+from zerotk import deps
 from zz.services.template_engine import TemplateEngine
+from zz.services.text import Text
 
 
 class UndefinedVariableInTemplate(KeyError):
     pass
 
 
-class AnatomyFile(object):
+@deps.define
+class AnatomyFile:
     """
     Implements a file.
 
@@ -17,12 +21,11 @@ class AnatomyFile(object):
         f.apply('directory')
     """
 
-    def __init__(self, filename, contents, executable=False):
-        from zerotk.text import dedent
+    text = deps.Singleton(Text)
 
-        self.__filename = filename
-        self.__content = dedent(contents)
-        self.__executable = executable
+    filename: pathlib.Path = deps.field()
+    content: str = deps.field()
+    executable: bool = deps.field(default=False)
 
     def apply(self, directory, variables, filename=None):
         """
@@ -39,17 +42,17 @@ class AnatomyFile(object):
             TemplateEngine.run, recursive_expansion=True, trim_blocks=True
         )
 
-        filename = filename or self.__filename
+        filename = filename or self.filename
         filename = os.path.join(directory, filename)
         filename = expand(filename, variables)
 
-        if self.__content.startswith("!"):
-            content_filename = self.__content[1:]
+        if self.content.startswith("!"):
+            content_filename = self.content[1:]
             template_filename = "{{ ANATOMY.templates_dir }}/{{ ANATOMY.template}}"
             template_filename = f"{template_filename}/{content_filename}"
             template_filename = expand(template_filename, variables)
             content_filename = expand(template_filename, variables)
-            self.__content = open(content_filename).read()
+            self.content = open(content_filename).read()
 
         # Use alternative variable/block expansion when working with Ansible
         # file.
@@ -58,12 +61,12 @@ class AnatomyFile(object):
         )
 
         try:
-            content = expand(self.__content, variables, alt_expansion)
+            content = expand(self.content, variables, alt_expansion)
         except Exception as e:
             raise RuntimeError("ERROR: {}: {}".format(filename, e))
 
         self._create_file(filename, content)
-        if self.__executable:
+        if self.executable:
             AnatomyFile.make_executable(filename)
 
     def _create_file(self, filename, contents):
@@ -84,11 +87,12 @@ class AnatomyFile(object):
         os.chmod(path, mode)
 
 
-class AnatomySymlink(object):
-    def __init__(self, filename, symlink, executable=False):
-        self.__filename = filename
-        self.__symlink = symlink
-        self.__executable = executable
+@deps.define
+class AnatomySymlink:
+
+    filename: pathlib.Path = deps.field()
+    symlink: str = deps.field()
+    executable: bool = deps.field(default=False)
 
     def apply(self, directory, variables, filename=None):
         """
@@ -105,17 +109,17 @@ class AnatomySymlink(object):
             TemplateEngine.run, recursive_expansion=True, trim_blocks=True
         )
 
-        filename = filename or self.__filename
+        filename = filename or self.filename
         filename = os.path.join(directory, filename)
         filename = expand(filename, variables)
 
-        symlink = os.path.join(os.path.dirname(filename), self.__symlink)
+        symlink = os.path.join(os.path.dirname(filename), self.symlink)
         assert os.path.isfile(
             symlink
         ), "Can't find symlink destination file: {}".format(symlink)
 
         self._create_symlink(filename, symlink)
-        if self.__executable:
+        if self.executable:
             AnatomyFile.make_executable(filename)
 
     @staticmethod
@@ -135,8 +139,8 @@ class AnatomySymlink(object):
         except Exception as e:
             raise RuntimeError(e)
 
-
-class AnatomyTree(object):
+@deps.define
+class AnatomyTree:
     """
     A collection of anatomy-files.
 
@@ -146,9 +150,11 @@ class AnatomyTree(object):
         tree.apply('directory')
     """
 
-    def __init__(self):
-        self.__variables = OrderedDict()
-        self.__files = {}
+    file_factory = deps.Factory(AnatomyFile)
+    symlink_factory = deps.Factory(AnatomySymlink)
+
+    _variables = OrderedDict()
+    _files = dict()
 
     def get_file(self, filename):
         """
@@ -157,7 +163,11 @@ class AnatomyTree(object):
         :param str filename:
         :return AnatomyFile:
         """
-        return self.__files.setdefault(filename, AnatomyFile(filename))
+        result = self._files.get(filename, None)
+        if result is None:
+            result = self.file_factory(filename)
+            self._files[filename] = result
+        return result
 
     def apply(self, directory, variables=None):
         """
@@ -166,11 +176,11 @@ class AnatomyTree(object):
         :param str directory:
         :param dict variables:
         """
-        dd = self.__variables.copy()
+        dd = self._variables.copy()
         if variables is not None:
             dd = merge_dict(dd, variables)
 
-        for i_fileid, i_file in self.__files.items():
+        for i_fileid, i_file in self._files.items():
             try:
                 filename = dd[i_fileid]["filename"]
             except KeyError:
@@ -184,10 +194,10 @@ class AnatomyTree(object):
         :param str filename:
         :param str contents:
         """
-        if filename in self.__files:
+        if filename in self._files:
             raise FileExistsError(filename)
 
-        self.__files[filename] = AnatomyFile(filename, contents, executable=executable)
+        self._files[filename] = self.file_factory(filename, contents, executable=executable)
 
     def create_link(self, filename, symlink, executable=False):
         """
@@ -196,10 +206,10 @@ class AnatomyTree(object):
         :param str filename:
         :param str symlink:
         """
-        if filename in self.__files:
+        if filename in self._files:
             raise FileExistsError(filename)
 
-        self.__files[filename] = AnatomySymlink(
+        self._files[filename] = self.symlink_factory(
             filename, symlink, executable=executable
         )
 
@@ -212,10 +222,10 @@ class AnatomyTree(object):
             If True, the root keys of the new variables (variables parameters) must already exist in the current
             variables dictionary.
         """
-        self.__variables = merge_dict(self.__variables, variables, left_join=left_join)
+        self._variables = merge_dict(self._variables, variables, left_join=left_join)
 
     def evaluate(self, text):
-        return eval(text, self.__variables)
+        return eval(text, self._variables)
 
 
 def merge_dict(d1, d2, left_join=True):
