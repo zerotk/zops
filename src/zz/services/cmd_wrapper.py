@@ -1,11 +1,6 @@
-import functools
-from typing import Any
-
-import boto3
-
 from zerotk import deps
-from zz.services.formatter import Formatter
 from zz.services.console import Console
+from zz.services.formatter import Formatter
 
 
 @deps.define
@@ -16,20 +11,35 @@ class CommandWrapper:
     Is it possible?
     I don't know.
     """
+
     formatter = deps.Singleton(Formatter)
     console = deps.Singleton(Console)
 
-    class Result:
-        def __init__(self, header, items):
-            self.header = header
-            self.items = items
-
     def items(self, items, header=False):
-        header = ""
-        if isinstance(items, self.Result):
-            header = items.header
-            items = items.items
+        # TODO: Move rich hangling to zz.services.Console.
+        from rich.console import Console
+        from rich.table import Table
+
+        table = Table()
         if header:
-            self.console.title(header)
-        for i in items:
-            self.console.item(i)
+            table.title = header
+
+        for i, i_item in enumerate(items):
+            if isinstance(i_item, str):
+                d = {"items": i_item}
+            elif hasattr(i_item, "as_dict"):
+                d = i_item.as_dict()
+            elif hasattr(i_item, "__annotations__"):
+                d = {j: getattr(i_item, j) for j in i_item.__annotations__.keys()}
+            else:
+                raise RuntimeError(
+                    f"Item does not implements either as_dict or __annotations__ interface. {i_item.__class__}"
+                )
+
+            if i == 0:
+                for j in d.keys():
+                    table.add_column(j)
+            table.add_row(*d.values())
+
+        console = Console()
+        console.print(table)

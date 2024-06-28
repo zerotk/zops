@@ -1,5 +1,4 @@
 import attrs
-from collections import OrderedDict
 from typing import Any
 import functools
 import click
@@ -17,7 +16,7 @@ class Dependency:
       INTERFACE
       Returns the actual object using the strategy implemented in thes (Singleton, Factory, etc.)
       """
-      raise NotImplemented
+      raise NotImplementedError
 
 
 # Dependency: Singleton
@@ -44,7 +43,9 @@ class Singleton(Dependency):
       shared_singleton = obj.deps.shared.setdefault(self.__class__.__name__, dict())
       result = shared_singleton.get(key, None)
       if result is None:
-        result = self.class_(deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}"))
+        result = self.class_(
+          deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}")
+        )
         shared_singleton[key] = result
       return result
 
@@ -81,7 +82,6 @@ class Factory(Dependency):
 class Command(Dependency):
 
   callback: Any = None
-  name: str = deps.field(default=None)
 
   def create(self, obj, name):
     """
@@ -98,15 +98,15 @@ class Command(Dependency):
 
 
 def command(maybe_cls=None, **kwargs):
-  def wrap(callback):
-    return Command(callback)
+
+  def wrap(callback, **kwargs):
+    return Command(callback, **kwargs)
 
   if maybe_cls is None:
       return wrap
 
   return wrap(maybe_cls, **kwargs)
 
-  return Command(*args, **kargs)
 
 # Deps
 
@@ -198,21 +198,31 @@ def __command_entry_point__(self):
   """
 
   def get_commands(obj):
+    import types
+
     for i_name, i_decl in obj.deps.declarations.items():
       if not isinstance(i_decl, Command):
         continue
       result = getattr(obj, i_name)
       if isinstance(getattr(result, "deps", None), Deps):
-        result = create_group(result)
+        result = create_group(result, i_name)
       yield i_name, result
 
-  def create_group(obj):
-    @click.group
+    for i_name, i_decl in obj.__class__.__dict__.items():
+      if not isinstance(i_decl, click.Command):
+        continue
+      result = getattr(obj, i_name)
+      result.callback = types.MethodType(result.callback, obj)
+      yield i_name, result
+
+  def create_group(obj, name):
+    @click.group(name)
     def result():
       pass
     for i_name, i_command in get_commands(obj):
-      result.add_command(i_command, name=i_name)
+      result.add_command(i_command)
     return result
 
-  result = create_group(self)
+  # import pdb;pdb.set_trace()
+  result = create_group(self, "main")
   return result()

@@ -190,7 +190,7 @@ def test_command_call():
   @deps.define()
   class Alpha:
 
-    @deps.Command("test")
+    @click.command("test")
     @click.argument("subject", default="World")
     def anything(self, subject):
       """
@@ -200,7 +200,7 @@ def test_command_call():
 
   a = Alpha()
   with pytest.raises(SystemExit) as e:
-    a.test(["there"])
+    a.main()
     assert e.retcode == 0
 
 
@@ -209,19 +209,19 @@ def test_sub_command():
   @deps.define()
   class Alpha:
 
-    @deps.Command
+    @click.command
     def test_alpha(self):
       """
       This is alpha.
       """
-      print(f"Hello from Alpha.")
+      print("Hello from Alpha.")
 
   @deps.define()
   class Bravo:
 
     alpha = deps.Command(Alpha)
 
-    @deps.Command
+    @click.command
     def test_bravo(self):
       """
       This is bravo.

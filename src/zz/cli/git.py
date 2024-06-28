@@ -1,19 +1,21 @@
 import asyncio
+
+import click
+
 from zerotk import deps
 
 
 @deps.define
 class GitCli:
 
-    @deps.Command
-    def plan() -> None:
+    @click.command("status")
+    def plan(self) -> None:
         """
         Recursive git status.
         """
-        asyncio.run(git_st())
+        asyncio.run(self.git_st())
 
-
-    async def git_st():
+    async def git_st(self):
         import pathlib
 
         from zz.services.git import Git

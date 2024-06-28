@@ -1,26 +1,21 @@
 import asyncio
-import functools
 
-import attrs
-
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 from .console import Console
 from .filesystem import FileSystem
 from .subprocess import SubProcess
 
 
-@Appliance.define
-class Git(Appliance):
+@deps.define
+class Git:
     """
     Git
     """
 
-    __requirements__ = Appliance.Requirements(
-        console=Console,
-        filesystem=FileSystem,
-        subprocess=SubProcess,
-    )
+    console = deps.Singleton(Console)
+    filesystem = deps.Singleton(FileSystem)
+    subprocess = deps.Singleton(SubProcess)
 
     async def status_report(
         self, directory: FileSystem.Path = FileSystem.Path.cwd()

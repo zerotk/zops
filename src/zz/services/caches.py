@@ -1,8 +1,8 @@
-from zerotk.appliance import Appliance
+from zerotk import deps
 
 
-@Appliance.define
-class Caches(Appliance):
+@deps.define
+class Caches:
     """
     Cache service.
     """

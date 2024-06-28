@@ -5,6 +5,7 @@ from rich.console import Console
 
 from zerotk import deps
 
+
 @deps.define
 class Console:
 
@@ -26,7 +27,7 @@ class Console:
     INFO_PREFIX = "\U0001F6C8"
     ERROR_TITLE_PREFIX = "!!!"
 
-    verbose_level: int = 0
+    verbose_level: int = deps.field(default=0)
     _blocks = OrderedDict()
     _console = Console(highlight=False)
 

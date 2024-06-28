@@ -1,8 +1,31 @@
-import functools
 from typing import Any
 
 import boto3
+
 from zerotk import deps
+from zz.services.console import Console
+
+
+@deps.define
+class Cloud:
+
+    console = deps.Singleton(Console)
+    profile_name: str = deps.field()
+
+    # def ec2_list(self):
+    #     self.console.title("ec2.list")
+
+    @property
+    def account_id(self):
+        self.aws
+        pass
+
+
+@deps.define
+class AwsParameter:
+    name: str = deps.field()
+    value: str = deps.field()
+    type_: str = deps.field()
 
 
 @deps.define
@@ -11,8 +34,10 @@ class AwsProvider:
     Encapsulate access to AWS API so we can mock it for testing.
     """
 
-    profile: str
-    region: str
+    profile: str = deps.field(default=None)
+    region: str = deps.field(default=None)
+    cloud_factory = deps.Factory(Cloud)
+    parameter_factory = deps.Factory(AwsParameter)
 
     @property
     def session(self) -> boto3.Session:
@@ -60,21 +85,25 @@ class AwsProvider:
         result = "\n".join(result)
         return result
 
-    def get_parameters(self, parameter_prefix):
+    def get_parameters(self, parameter_prefix) -> list[AwsParameter]:
         ssm_client = self.ssm_client()
         parameters_pages = ssm_client.get_paginator("get_parameters_by_path").paginate(
             Path=parameter_prefix,
             Recursive=True,
             WithDecryption=True,
         )
-        result = {}
+        result = []
         for i_page in parameters_pages:
             for j_parameter in i_page["Parameters"]:
-                result[j_parameter["Name"]] = (
-                    j_parameter.get("Value"),
-                    j_parameter.get("Type"),
+                result.append(
+                    self.parameter_factory(
+                        name=j_parameter["Name"],
+                        value=j_parameter.get("Value"),
+                        type_=j_parameter.get("Type"),
+                    )
                 )
         return result
 
-    def list_profiles(self):
-        self.session.available_profiles
+    def list_clouds(self):
+        for i_profile in self.session.available_profiles:
+            yield self.cloud_factory(profile_name=i_profile)

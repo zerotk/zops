@@ -9,5 +9,6 @@ class Aws:
 
     def list_profiles(self):
         import boto3
+
         session = boto3.Session()
         return session.available_profiles

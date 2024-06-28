@@ -1,9 +1,9 @@
-import functools
 from typing import Iterable
 from typing import Tuple
 
-from .console import Console
 from zerotk import deps
+
+from .console import Console
 
 
 @deps.define

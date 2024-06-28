@@ -6,6 +6,7 @@ from zz.cli import tf
 
 def main():
     from zerotk import deps
+
     @deps.define
     class ZopsCli:
 

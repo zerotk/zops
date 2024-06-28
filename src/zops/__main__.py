@@ -1,9 +1,6 @@
 import click
 
-import zops.anatomy.cli_commands as anatomy_commands
 import zops.aws.cli_commands as aws_commands
-import zops.codegen.cli_commands as codegen_commands
-import zops.terraform.cli_commands as tf_commands
 
 
 @click.group()
@@ -43,32 +40,6 @@ aws.add_command(aws_commands.resources_clear_default_vps)
 aws.add_command(aws_commands.vpc_details)
 aws.add_command(aws_commands.ecs_deploy)
 aws.add_command(aws_commands.sso_autologin)
-
-
-@main.group()
-def tf():
-    pass
-
-
-tf.add_command(tf_commands.tf_plan)
-
-
-@main.group()
-def anatomy():
-    pass
-
-
-anatomy.add_command(anatomy_commands.apply)
-
-
-@main.group()
-def codegen():
-    pass
-
-
-codegen.add_command(codegen_commands.codegen_new_apply)
-codegen.add_command(codegen_commands.codegen_apply)
-
 
 if __name__ == "__main__":
     main()
