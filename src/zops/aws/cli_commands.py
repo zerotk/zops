@@ -484,6 +484,8 @@ def asg_instance_refresh(asg_seed):
         # Update instances related with Tier3's production ASGs.
         uh aws asg.instance-refresh tier3-prod-app
     """
+    from zops.aws.cluster import list_autoscaling_groups
+
     load_config()
     autoscaling_groups = list_autoscaling_groups(asg_seed)
 
@@ -942,7 +944,7 @@ def sso_autologin(sso_url: str) -> None:
 
     # https://device.sso.ca-central-1.amazonaws.com/?user_code=KRGH-DGNR
     """
-    click.echo(f"sso.autologin: {soo_url}")
+    click.echo(f"sso.autologin: {sso_url}")
 
 
 #     from selenium import webdriver

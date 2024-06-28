@@ -86,7 +86,6 @@ class Text:
             text = re.sub(r"(?m)^" + margin, "", text)
         return text
 
-
     def indent(text, indent_=1, indentation="    "):
         """
         Indents multiple lines of text.
@@ -126,7 +125,6 @@ class Text:
             result = ""
         return result
 
-
     def safe_split(self, s, sep, maxsplit=None, default="", reversed=False):
         """
         Perform a string split granting the size of the resulting list.
@@ -140,6 +138,7 @@ class Text:
             Returns a list with fixed size of maxsplit + 1.
         """
         import string
+
         if reversed:
             split = string.rsplit
         else:
@@ -158,7 +157,6 @@ class Text:
                 else:
                     result = result + defaults
         return result
-
 
     def format_it(self, iterable, format_expr="'%s'"):
         """
@@ -180,7 +178,6 @@ class Text:
         """
         items = ", ".join((format_expr % (item,) for item in iterable))
         return "[%s]" % (items,)
-
 
     def match_any(self, text, regexes):
         """

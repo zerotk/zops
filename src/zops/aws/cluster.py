@@ -7,7 +7,6 @@ from typing import Dict
 
 import boto3
 import click
-import yaml
 
 from .image import Image
 from .instance import Instance
@@ -106,16 +105,15 @@ class Cluster:
     ]
 
     CLUSTER_MAP = {
-        "bp": "buildandprice",
-        "pi": "paymentinsights",
         "audi": "tier1_audi",
+        "bp": "buildandprice",
+        "dev": "mi-dev",
         "intranet": "internal",
         "nomad": "internal",
-        "sandbox": "mi-sandbox",
-        "dev": "mi-dev",
+        "pi": "paymentinsights",
         "qa": "mi-qa",
+        "sandbox": "mi-sandbox",
         "stage": "mi-stage",
-        "intranet": "internal",
     }
 
     @classmethod
