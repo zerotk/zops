@@ -153,8 +153,8 @@ class AnatomyTree:
     file_factory = deps.Factory(AnatomyFile)
     symlink_factory = deps.Factory(AnatomySymlink)
 
-    _variables = OrderedDict()
-    _files = dict()
+    _variables = deps.Attribute(OrderedDict)
+    _files = deps.Attribute(dict)
 
     def get_file(self, filename):
         """

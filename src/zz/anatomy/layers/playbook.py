@@ -1,80 +1,85 @@
 from collections import OrderedDict
-
+from zerotk import deps
 from zerotk.yaml import yaml_from_file
-from zz.anatomy.layers.feature import AnatomyFeatureRegistry
+from .registry import AnatomyFeatureRegistry
+from .tree import AnatomyTree
+import pathlib
 
 
-class AnatomyPlaybook(object):
+@deps.define
+class AnatomyPlaybook:
     """
     Describes features and variables to apply in a project tree.
     """
 
-    def __init__(self, condition=True):
-        self.__features = OrderedDict()
-        self.__variables = {}
+    tree_factory = deps.Factory(AnatomyTree)
 
-    @classmethod
-    def get_template_name(cls, filename):
+    registry: AnatomyFeatureRegistry = deps.field()
+    _features = deps.Attribute(OrderedDict)
+    _variables = deps.Attribute(dict)
+
+    # @classmethod
+    # def get_template_name(cls, filename):
+    #     contents = yaml_from_file(filename)
+    #     return contents.pop("anatomy-template", "application")
+
+    def from_file(self, filename: pathlib.Path) -> None:
         contents = yaml_from_file(filename)
-        return contents.pop("anatomy-template", "application")
+        self.from_contents(contents)
 
-    @classmethod
-    def from_file(cls, filename):
-        contents = yaml_from_file(filename)
-        result = cls.from_contents(contents)
-        return result
-
-    @classmethod
-    def from_contents(cls, contents):
-        result = cls()
-        result.__use_feature("ANATOMY", [])
+    def from_contents(self, contents: str) -> None:
+        # Always add ANATOMY feature to the list of features for the playbook.
+        self._add_feature("ANATOMY")
         contents = contents.pop("anatomy-playbook", contents)
         use_features = contents.pop("use-features")
         if not isinstance(use_features, dict):
             raise TypeError(
-                'Use-features must be a dict not "{}"'.format(use_features.__class__)
+                f"Use-features must be a dict not '{use_features.__class__}'"
             )
         skip_features = contents.pop("skip-features", [])
         for i_feature_name, i_variables in use_features.items():
-            result.__use_feature(i_feature_name, skip_features)
-            i_variables = cls._process_variables(i_variables)
-            result.set_variables(i_feature_name, i_variables)
+            self._add_feature(i_feature_name, skip_features)
+            self._add_variables(i_feature_name, self._process_variables(i_variables))
 
         if contents.keys():
             raise KeyError(list(contents.keys()))
 
-        return result
-
-    @classmethod
-    def _process_variables(cls, variables):
+    def _process_variables(self, variables):
         return variables
 
-    def __use_feature(self, feature_name, skipped):
-        feature = AnatomyFeatureRegistry.get(feature_name)
-        feature.using_features(self.__features, skipped)
+    def _add_feature(self, feature_name, skip_features=[]):
+        # print("INSIDE", id(self._features), len(self._features))
+        feature = self.registry.get(feature_name)
 
-    def set_variables(self, feature_name, variables):
-        """
-        :param str key:
-        :param object value:
-        """
-        assert feature_name not in self.__variables
-        self.__variables[feature_name] = variables
+        # Check if we already loaded a feature with the same name and if that's the case check if
+        # it's the same instance.
+        check_feature = self._features.get(feature_name)
+        if check_feature is not None:
+            assert id(check_feature) == id(feature)
+            return
+
+        feature.enabled = feature.name not in skip_features
+        for i_name in feature.use_features:
+            self._add_feature(i_name, skip_features)
+
+        self._features[feature_name] = feature
+
+    def _add_variables(self, feature_name, variables):
+        assert feature_name not in self._variables
+        self._variables[feature_name] = variables
 
     def apply(self, directory):
         import os
 
-        from zz.anatomy.layers.tree import AnatomyTree
-
-        tree = AnatomyTree()
+        tree = self.tree_factory()
 
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
         print("Applying features:")
-        for i_feature_name, i_feature in self.__features.items():
+        for i_feature_name, i_feature in self._features.items():
             i_feature.apply(tree)
             print(" * {}".format(i_feature_name))
 
         print("Applying anatomy-tree.")
-        tree.apply(directory, self.__variables)
+        tree.apply(directory, self._variables)

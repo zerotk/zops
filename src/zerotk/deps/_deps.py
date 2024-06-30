@@ -2,6 +2,7 @@ import attrs
 from typing import Any
 import functools
 import click
+from dataclasses import dataclass
 
 
 # Dependency:
@@ -11,12 +12,26 @@ class Dependency:
     Base class for all dependencies.
     The name "dependency" comes from the idea of "dependency injection".
     """
-    def create(self, obj:Any, name:str) -> Any:
+    def create(self, deps: "Deps", name:str) -> Any:
       """
       INTERFACE
       Returns the actual object using the strategy implemented in thes (Singleton, Factory, etc.)
       """
       raise NotImplementedError
+
+
+# Dependency: Attribute
+
+@attrs.define
+class Attribute(Dependency):
+
+    class_: Any
+
+    def __repr__(self):
+       return f"<{self.__class__.__name__}({self.class_.__name__})>"
+
+    def create(self, deps: "Deps", name):
+      return self.class_()
 
 
 # Dependency: Singleton
@@ -38,13 +53,13 @@ class Singleton(Dependency):
     def __repr__(self):
        return f"<{self.__class__.__name__}({self.class_.__name__})>"
 
-    def create(self, obj, name):
+    def create(self, deps, name):
       key = (self.class_.__name__, name)
-      shared_singleton = obj.deps.shared.setdefault(self.__class__.__name__, dict())
+      shared_singleton = deps.shared.setdefault(self.__class__.__name__, dict())
       result = shared_singleton.get(key, None)
       if result is None:
         result = self.class_(
-          deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}")
+          deps=Deps(shared=deps.shared, name=f"{deps.name}.{name}")
         )
         shared_singleton[key] = result
       return result
@@ -65,36 +80,37 @@ class Factory(Dependency):
     def __repr__(self):
        return f"<{self.__class__.__name__}({self.class_.__name__})>"
 
-    def create(self, obj, name):
+    def create(self, deps, name):
       """
       Returns the partial constructor for the declared class with the `deps` parameter assigned.
       """
+      factory_function = self.class_
       result = functools.partial(
-         self.class_,
-         deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}")
+         factory_function,
+         deps=Deps(shared=deps.shared, name=f"{deps.name}.{name}")
       )
       return result
 
 
 # Dependency: Command (using click)
 
-@attrs.define
-class Command(Dependency):
-
-  callback: Any = None
-
-  def create(self, obj, name):
-    """
-    Create a click.command and stores the in the shared dict for future reference.
-    (Is this really needed).
-    """
-    import types
-    if isinstance(self.callback, types.FunctionType):
-      result = click.command(self.callback)
-      result.callback = types.MethodType(result.callback, obj)
-    else:
-      result = self.callback(deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}"))
-    return result
+# @attrs.define
+# class Command(Dependency):
+#
+#   callback: Any = None
+#
+#   def create(self, obj, name):
+#     """
+#     Create a click.command and stores the in the shared dict for future reference.
+#     (Is this really needed).
+#     """
+#     import types
+#     if isinstance(self.callback, types.FunctionType):
+#       result = click.command(self.callback)
+#       result.callback = types.MethodType(result.callback, obj)
+#     else:
+#       result = self.callback(deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}"))
+#     return result
 
 
 def command(maybe_cls=None, **kwargs):
@@ -163,7 +179,7 @@ def define(maybe_cls=None, **kwargs):
   """
 
   def wrap(cls):
-    cls.deps: Deps = attrs.field(factory=Deps)
+    cls.deps: Deps = attrs.field()
     cls.__attrs_post_init__ = __attrs_post_init__
     cls.main = __command_entry_point__
     return attrs.define(cls, slots=False, **kwargs)
@@ -226,3 +242,25 @@ def __command_entry_point__(self):
   # import pdb;pdb.set_trace()
   result = create_group(self, "main")
   return result()
+
+
+class MetaClass(type):
+
+  def __new__(cls, clsname, clsbases, clsattrs):
+    deps_ = Deps()
+    new_attrs = dict(deps=deps_)
+
+    # TODO:
+    # annotations = clsattrs.setdefault("__annotations__", dict())
+    # annotations["deps"] = Deps
+
+    for i_name, i_value in clsattrs.items():
+      if isinstance(i_value, Dependency):
+        deps_.declarations.add(i_name, i_value)
+        new_attrs[i_name] = i_value.create(deps_, i_name)
+    clsattrs.update(new_attrs)
+    result = super().__new__(cls, clsname, clsbases, clsattrs)
+
+    result = dataclass(result)
+
+    return result

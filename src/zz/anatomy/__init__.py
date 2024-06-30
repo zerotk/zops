@@ -1,6 +1,9 @@
 from zerotk import deps
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
+from zz.anatomy.layers.registry import AnatomyFeatureRegistry
+from zz.anatomy.layers.playbook import AnatomyPlaybook
+
 
 
 @deps.define
@@ -9,24 +12,27 @@ class AnatomyEngine:
     filesystem = deps.Singleton(FileSystem)
     console = deps.Singleton(Console)
 
+    registry_factory = deps.Factory(AnatomyFeatureRegistry)
+    playbook_factory = deps.Factory(AnatomyPlaybook)
+
     def run(self, directory):
         playbooks = self.filesystem.Path(directory).rglob("anatomy-playbook.yml")
         for i_playbook in playbooks:
             self._apply_anatomy(i_playbook)
 
     def _apply_anatomy(self, playbook_filename):
-        from zz.anatomy.layers.feature import AnatomyFeatureRegistry
-        from zz.anatomy.layers.playbook import AnatomyPlaybook
-
         self.console.info(f"Playbook {playbook_filename}")
 
         features_filename = self._find_features(playbook_filename)
         templates_dir = features_filename.parent / "templates"
         self.console.info(f"Features {features_filename}")
 
-        AnatomyFeatureRegistry.clear()
-        AnatomyFeatureRegistry.register_from_file(features_filename, templates_dir)
-        AnatomyPlaybook.from_file(playbook_filename).apply(playbook_filename.parent)
+        registry = self.registry_factory()
+        # print("OUTSIDE", id(registry), id(registry._items))
+        registry.from_file(features_filename, templates_dir)
+        playbook = self.playbook_factory(registry=registry)
+        playbook.from_file(playbook_filename)
+        playbook.apply(playbook_filename.parent)
 
     def _find_features(self, playbook_filename):
         import pathlib

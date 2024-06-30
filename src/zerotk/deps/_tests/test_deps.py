@@ -1,6 +1,45 @@
 from zerotk import deps
 import click
 import pytest
+import attrs
+
+
+
+
+def test_deps_metaclass():
+
+  class Support(metaclass=deps.MetaClass):
+    pass
+
+  class Alpha(metaclass=deps.MetaClass):
+    first: int
+    second: int = 2
+    third = deps.Singleton(Support)
+
+  a = Alpha()
+  assert a.first == 1
+  assert a.second == 2
+
+
+def test_behave_like_attrs():
+
+  @attrs.define()
+  class Alpha:
+    first: int
+    second: int = -1
+
+  @deps.define()
+  class Bravo:
+    first: int
+    second: int = -1
+
+  a = Alpha(first=1, second=2)
+  assert a.first == 1
+  assert a.second == 2
+
+  b = Bravo(first=1, second=2)
+  assert b.first == 1
+  assert b.second == 2
 
 
 def test_deps():
