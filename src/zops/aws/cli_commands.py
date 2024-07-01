@@ -470,7 +470,9 @@ def asg_list(asg_seed, profile, region):
         uh aws asg.list tier3-prod
     """
     load_config()
-    for i_asg in AutoScalingGroup.list_groups(asg_seed, profile_name=profile, region=region):
+    for i_asg in AutoScalingGroup.list_groups(
+        asg_seed, profile_name=profile, region=region
+    ):
         i_asg.print()
 
 
@@ -510,7 +512,9 @@ def asg_update(asg_seed, desired_capacity, profile, region):
     """
     load_config()
 
-    for i_asg in AutoScalingGroup.list_groups(asg_seed, profile_name=profile, region=region):
+    for i_asg in AutoScalingGroup.list_groups(
+        asg_seed, profile_name=profile, region=region
+    ):
         i_asg.print()
         i_asg.update(
             desired_capacity=desired_capacity,

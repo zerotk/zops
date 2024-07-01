@@ -13,7 +13,7 @@ class CodegenCli:
     codegen = deps.Singleton(CodegenEngine)
     anatomy = deps.Singleton(AnatomyEngine)
 
-    @deps.Command
+    @click.command
     @click.argument("directory", type=click.Path(), default=".")
     def apply(self, directory: pathlib.Path = "."):
         self.codegen.run(directory)

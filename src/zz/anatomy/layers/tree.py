@@ -139,6 +139,7 @@ class AnatomySymlink:
         except Exception as e:
             raise RuntimeError(e)
 
+
 @deps.define
 class AnatomyTree:
     """
@@ -197,7 +198,9 @@ class AnatomyTree:
         if filename in self._files:
             raise FileExistsError(filename)
 
-        self._files[filename] = self.file_factory(filename, contents, executable=executable)
+        self._files[filename] = self.file_factory(
+            filename, contents, executable=executable
+        )
 
     def create_link(self, filename, symlink, executable=False):
         """

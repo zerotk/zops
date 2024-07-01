@@ -11,13 +11,10 @@ class ConsoleLogger:
         self.output += f"{text}\n"
 
 
-
 @attrs.define
 class AlphaService(Appliance):
 
-    __requirements__ = Requirements(
-        console=Dependency(ConsoleLogger)
-    )
+    __requirements__ = Requirements(console=Dependency(ConsoleLogger))
     name: str
 
     def run(self):
@@ -43,9 +40,8 @@ def test_1():
     a = AlphaService(name="simplest")
     a.run()
     assert a.console.output == "Alpha(simplest)\n"
-    assert a.appliances.tree() == [
-        "<root>.console: ConsoleLogger"
-    ]
+    assert a.appliances.tree() == ["<root>.console: ConsoleLogger"]
+
 
 def test_2():
     # Test 2: Overwriting a dependency
@@ -56,9 +52,8 @@ def test_2():
     assert logger.output == "Alpha(overwriting)\n"
     assert a.console is logger
     assert a.appliances is appliances
-    assert a.appliances.tree() == [
-        "<root>.console: ConsoleLogger"
-    ]
+    assert a.appliances.tree() == ["<root>.console: ConsoleLogger"]
+
 
 def test_3():
     # Test 3: Two level no boiler plate
@@ -70,6 +65,7 @@ def test_3():
         "<root>.alpha: AlphaService",
         "<root>.alpha.console: ConsoleLogger",
     ]
+
 
 def test_4():
     # Test 4: Two level overwrite

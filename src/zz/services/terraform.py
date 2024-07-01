@@ -151,7 +151,7 @@ class Terraform:
     subprocess = deps.Singleton(SubProcess)
     config_factory = deps.Factory(TerraformConfig)
 
-    _semaphores: list[asyncio.Semaphore] = []
+    _semaphores: list = deps.field(default_factory=list)
 
     ACTION_MAP = {
         "update": "~",
