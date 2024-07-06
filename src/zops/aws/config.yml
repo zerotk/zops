@@ -160,7 +160,7 @@ clusters:
 
   creditapp:
     aws_id: 150454740545
-    profile: tier3_cluster
+    profile: mi-tier3
     regions:
       - ca-central-1
     images:
@@ -196,7 +196,7 @@ clusters:
 
   tier3:
     aws_id: 150454740545
-    profile: tier3_cluster
+    profile: mi-tier3
     regions:
       - ca-central-1
       - us-east-2
@@ -219,7 +219,7 @@ clusters:
 
   t3can:
     aws_id: 150454740545
-    profile: tier3_cluster
+    profile: mi-tier3
     project: tier3
     regions:
       - ca-central-1

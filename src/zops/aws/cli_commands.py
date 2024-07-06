@@ -122,7 +122,7 @@ region = {region}"""
                 f"""
 role_arn={role_arn}
 """
-            )
+        )
 
 
 @click.command("ami.deregister")

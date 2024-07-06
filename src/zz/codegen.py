@@ -52,7 +52,7 @@ class CodegenEngine:
             dataset_index = i_template.get("dataset", "")
             filenames = i_template["filenames"]
             for j_name, j_values in _get_dataset_items(datasets, dataset_index):
-                self.console.secho(f"{dataset_index}::{j_name}")
+                self.console.title(f"{dataset_index}::{j_name}")
                 for k_filename in filenames:
                     filename = self.filesystem.Path(
                         k_filename.replace("__name__", j_name)

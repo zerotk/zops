@@ -1,6 +1,7 @@
 from typing import Any
 
 import boto3
+from botocore import exceptions
 
 from zerotk import deps
 from zz.services.console import Console
@@ -9,16 +10,25 @@ from zz.services.console import Console
 @deps.define
 class Cloud:
 
-    console = deps.Singleton(Console)
-    profile_name: str = deps.field()
-
-    # def ec2_list(self):
-    #     self.console.title("ec2.list")
+    profile_name: str
 
     @property
     def account_id(self):
-        self.aws
-        pass
+        try:
+            session = boto3.Session(profile_name=self.profile_name)
+            client = session.client("sts")
+            result = client.get_caller_identity()['Account']
+        except exceptions.NoCredentialsError:
+            result = "<NO CREDENTIALS>"
+        except Exception as e:
+            result = str(e)
+        return result
+
+    def as_dict(self):
+        return dict(
+            profile_name=self.profile_name,
+            account_id=self.account_id,
+        )
 
 
 @deps.define
