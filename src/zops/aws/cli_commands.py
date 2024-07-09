@@ -451,7 +451,7 @@ Check if your AWS credentials work with:
                 break
         print(output["StandardOutputContent"])
     else:
-        cmd = f"aws --profile={profile} ssm start-session --target {instance_id}"
+        cmd = f"aws --profile={profile} ssm start-session --target {instance_id} --document-name AWS-StartInteractiveCommand --parameters command=\"bash -l\""
         print(f"Command line: {cmd}")
         os.system(cmd)  # nosec B605
         print(f"{instance_id}: Finished SSM session.")
