@@ -8,37 +8,27 @@ aws_owners:
 
 # Maps directories with cluster names.
 clusters_map:
-  "/ami.unhaggle": "unhaggle-ami"
-  "/creditapp": "t3can"
-  "/mi-cluster": "mi-dev"
-  "/paymentinsights": "paymentinsights"
-  "/pi-cluster": "paymentinsights"
-  "/polestar": "polestar"
-  "/polestar-cluster": "polestar"
-  "/t3can-cluster": "t3can"
-  "/t3usa-cluster": "t3usa"
+  "/creditapp": "mi-tier3"
+  "/paymentinsights": "mi-pi"
   "/tier1": "tier1"
-  "/tier1-cluster": "tier1"
-  "/tier1_audi": "tier1_audi"
-  "/tier3": "tier3"
-  "/t3can": "tier3"
+  "/tier3": "mi-tier3"
+  "/t3can": "mi-tier3"
   "/t3usa": "t3usa"
-  "/unhaggle": "unhaggle"
-  "/unhaggle-ami": "unhaggle-ami"
-  "/unhaggle-cluster": "unhaggle"
+  "/unhaggle": "mi-unhaggle"
 
 # Maps environments (dev, prod, stage, etc.) and directories (tier1, tier3,
 # peb, etc.) to aws profiles. This is used to try to guess the aws profile
 # from a seed (tier3-dev, peb-prod, tier1-stage, etc.)
 aws_profiles_map:
   dev: "mi-dev"
-  intranet: "internal"
-  nomad: "internal"
-  peb: "tier3"
-  pi: "pi"
+  intranet: "mi-is"
+  nomad: "mi-is"
+  peb: "mi-tier3"
+  pi: "mi-pi"
   qa: "mi-qa"
   sandbox: "mi-sandbox"
   stage: "mi-stage"
+  unhaggle: "mi-unhaggle"
 
 clusters:
   # This is the account used to build, provide and consume AMIs.
@@ -62,8 +52,9 @@ clusters:
       - nomad
       - cluster
 
-  internal:
+  mi-is:
     aws_id: 299378319612
+    profile: mi-is
     regions:
       - us-east-2
       - ca-central-1
@@ -143,9 +134,9 @@ clusters:
       - ca-central-1
     images: []
 
-  tier1:
+  mi-tier1:
     aws_id: 624664959560
-    profile: tier1_cluster
+    profile: mi-tier
     regions:
       - ca-central-1
     sentry_id:
@@ -158,7 +149,7 @@ clusters:
       prod: 516056459
     psql_version: 12
 
-  creditapp:
+  mi-creditapp:
     aws_id: 150454740545
     profile: mi-tier3
     regions:
@@ -176,23 +167,28 @@ clusters:
     newrelic_id:
       prod: 576760411
 
-  polestar:
-    aws_id: 135144572806
-    profile: polestar
+  mi-tier3:
+    aws_id: 150454740545
+    profile: mi-tier3
     regions:
+      - ca-central-1
       - us-east-2
-    sentry_id:
-      dev: polestar-dev
-      stage: polestar-stage
-      qa: polestar-qa
-      prod: polestar-prod
-    newrelic_id:
-      prod: 531489707
     images:
       - app
       - tunnel
       - clean
       - ftp
+    newrelic_id:
+      dev: 560968686
+      prod: 85184725
+      stage: 343583357
+      qa: 547461357
+    sentry_id:
+      # TODO: How to define Sentry environment?
+      dev: motocommerce-py-stage
+      stage: motocommerce-py-stage
+      qa: motocommerce-py-stage
+      prod: motocommerce-py-prod
 
   tier3:
     aws_id: 150454740545
@@ -241,29 +237,22 @@ clusters:
       - clean
       - ftp
 
-  pi:
+  mi-pi:
     aws_id: 475884482681
-    profile: pi_cluster
+    profile: mi-pi
     regions:
       - ca-central-1
     psql_version: 12
     requires_name: requirements.txt
 
-  unhaggle:
+  mi-unhaggle:
     aws_id: 244165182258
-    profile: unhaggle
+    profile: mi-unhaggle
     regions:
-      - ca-central-1
-
-  tf_state:
-    aws_id: 0
-    profile: tf_state
-    regions:
-      - us-east-1
       - ca-central-1
 
   mi-main:
     aws_id: 226874278664
-    profile: main
+    profile: mi-main
     regions:
       - ca-central-1

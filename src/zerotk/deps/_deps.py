@@ -52,6 +52,8 @@ class Singleton(Dependency):
     """
 
     class_: Any
+    request: bool = False
+    kwargs: dict = field(default_factory=dict)
 
     def __repr__(self):
         return f"<{self.__class__.__name__}({self.class_.__name__})>"
@@ -61,8 +63,14 @@ class Singleton(Dependency):
         shared_singleton = obj.deps.shared.setdefault(self.__class__.__name__, dict())
         result = shared_singleton.get(key, None)
         if result is None:
+            if self.request:
+                return "SingletonRequired"  #TODO: Return an object that fails if used.
             result = self.class_(
-                deps=Deps(shared=obj.deps.shared, name=f"{obj.deps.name}.{name}")
+                deps=Deps(
+                    shared=obj.deps.shared,
+                    name=f"{obj.deps.name}.{name}"
+                ),
+                **self.kwargs
             )
             shared_singleton[key] = result
         return result

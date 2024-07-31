@@ -71,10 +71,10 @@ class TerraformCli:
     async def _tf_apply(self, deployments, skip_init, verbose):
         await self.terraform.apply(deployments, skip_init=skip_init)
 
-        for i_log in self.subprocess.execution_logs:
-            if i_log.is_error():
-                self.console.title(f"{i_log.cmd_line} (retcode: {i_log.retcode})")
-                # console._print(i_log.output)
+        error_logs = [i for i in self.subprocess.execution_logs if i.is_error()]
+        for i_log in error_logs:
+            self.console.title(f"{i_log.cmd_line} (retcode: {i_log.retcode})")
+            self.console._print(i_log.output)
 
 
 # main = click.Group(name="tf")

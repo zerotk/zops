@@ -1,7 +1,7 @@
 import click
 
 from zerotk import deps
-from zz.services.aws_provider import AwsProvider
+from zz.services.aws_provider import Cloud, AwsLocal, AwsProvider
 from zz.services.cmd_wrapper import CommandWrapper
 from zz.services.console import Console
 
@@ -10,9 +10,8 @@ from zz.services.console import Console
 class AwsCli:
 
     console = deps.Singleton(Console)
-    aws_provider = deps.Factory(AwsProvider)
-    # aws = deps.Singleton(Aws)
-    # cloud_factory = deps.Factory(Cloud)
+    aws_local = deps.Singleton(AwsLocal)
+    cloud_factory = deps.Factory(Cloud)
     cmd_wrapper = deps.Singleton(CommandWrapper)
 
     @click.command("c")
@@ -20,8 +19,7 @@ class AwsCli:
         """
         List registered cloud accounts profiles.
         """
-        global_provider = self.aws_provider()
-        clouds = global_provider.list_clouds()
+        clouds = self.aws_local.list_clouds()
         result = self.cmd_wrapper.items(clouds, header="Available cloud profiles")
         return result
 
@@ -40,14 +38,16 @@ class AwsCli:
         )
 
     @click.command("ec2.list")
-    @click.argument("seed")
-    def ec2_list(self, seed):
+    @click.argument("profile")
+    @click.argument("region", default="ca-central-1")
+    def ec2_list(self, profile, region):
         """
         List ec2 instances.
         """
-        cloud = self.cloud_factory(seed)
-        cloud.list_ec2_instances()
-        self.console.todo("ec2.list")
+        self.deps.shared["Singleton"][("AwsProvider", "aws")] = AwsProvider(profile=profile, region=region)
+        cloud = self.cloud_factory(profile)
+        for i in cloud.list_ec2_instances():
+            self.console.item(i.instance_id)
 
     @click.command("ec2.shell")
     def ec2_shell(self):

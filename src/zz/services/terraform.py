@@ -194,7 +194,7 @@ class Terraform:
             return result
 
         # Run the report for all deployments
-        self.console.title("Applying")
+        self.console.title("Applying...")
 
         titles = {}
         for i_workdir, i_deployment, _workspace in deployments:
@@ -385,7 +385,7 @@ class Terraform:
         skip_plan: bool = False,
     ) -> str:
         bin_plan = "bin/plan"
-        tfplan_bin = f".terraform/{deployment}.tfplan.bin"
+        tfplan_bin = f".terraform/{deployment}.tfplan"
         tfplan_json = f".terraform/{deployment}.tfplan.json"
         var_file = f"tfvars/{deployment}.tfvars"
 
