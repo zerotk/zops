@@ -136,7 +136,7 @@ clusters:
 
   mi-tier1:
     aws_id: 624664959560
-    profile: mi-tier
+    profile: mi-tier1
     regions:
       - ca-central-1
     sentry_id:
@@ -236,6 +236,21 @@ clusters:
       - tunnel
       - clean
       - ftp
+
+  tier1:
+    aws_id: 624664959560
+    profile: mi-tier1
+    regions:
+      - ca-central-1
+    sentry_id:
+      dev: tier1-dev
+      stage: moto-stage
+      prod: t1-moto-prod
+    newrelic_id:
+      dev: 518442355
+      stage: 544578180
+      prod: 516056459
+    psql_version: 12
 
   mi-pi:
     aws_id: 475884482681
