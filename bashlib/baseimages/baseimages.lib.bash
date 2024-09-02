@@ -72,7 +72,6 @@ function baseimages__build_docker () {
 
 function baseimages__build_ami () {
   local VARS_TEMPLATE=$1;shift
-  local IMAGE_VERSION=$1;shift
   local VARS_FILENAME=.build/$(basename "${VARS_TEMPLATE%.*}").vars.hcl
 
   mkdir -p .build
