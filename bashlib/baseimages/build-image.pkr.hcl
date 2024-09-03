@@ -99,10 +99,6 @@ build {
       destination = "/tmp/${provisioner.key}"
     }
   }
-  provisioner "file" {
-    source      = "bin/provisioner.lib.bash"
-    destination = "/tmp/provisioner.lib.bash"
-  }
   provisioner "shell" {
     environment_vars = var.provisioner_env
     script           = var.provisioner_script
