@@ -77,9 +77,10 @@ function baseimages__build_ami () {
 
   # Note that we may or may not be running packer in a container. We use the relative path to the
   # file so it will work in both cases.
-  RELATIVE_SCRIPT_DIR=$(basename $SCRIPT_DIR)
-  baseimages__run_packer init $RELATIVE_SCRIPT_DIR/build-image.pkr.hcl
-  baseimages__run_packer build -var-file=$VARS_FILENAME "$@" $RELATIVE_SCRIPT_DIR/build-image.pkr.hcl
+  RELATIVE_SCRIPT_DIR=$(dirname ${BASH_SOURCE[0]})
+  PACKER_FILEPATH=$RELATIVE_SCRIPT_DIR/build-image.pkr.hcl
+  baseimages__run_packer init $PACKER_FILEPATH
+  baseimages__run_packer build -var-file=$VARS_FILENAME "$@" $PACKER_FILEPATH
 }
 
 # Internals

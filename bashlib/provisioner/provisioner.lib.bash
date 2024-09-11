@@ -40,7 +40,7 @@ function START () {
   _FINISH
   INSTALL_DIR="/tmp/$1"
   echo "#============================================================================== $1"
-  mkdir -p $INSTALL_DIR
+  install --mode=0777 -d $INSTALL_DIR
   cd $INSTALL_DIR
 }
 
@@ -78,7 +78,7 @@ function INSTALL_APT_SOURCE () {
   echo \
     "deb [arch="$(dpkg --print-architecture)" signed-by=$GPG_FILEPATH] $SOURCE_LIST" | \
     SUDO tee /etc/apt/sources.list.d/$NAME.list > /dev/null
-  SUDO apt-get update
+  SUDO apt-get update -qq
 }
 
 function INSTALL () {
@@ -91,7 +91,7 @@ function INSTALL () {
     fi
     SUDO dpkg -i $PACKAGE $@
   else
-    SUDO apt-get update
+    SUDO apt-get update -qq
     SUDO apt-get install -qq --no-install-recommends -y $@
     SUDO rm -rf /var/lib/apt/lists/*
   fi
@@ -101,7 +101,7 @@ PROVISIONER__INSTALL_TMP=0
 
 function INSTALL_TMP () {
   PROVISIONER__INSTALL_TMP="$(apt-mark showmanual)"
-  apt-get update
+  apt-get update -qq
   apt-get install -y --no-install-recommends "$@"
 }
 

@@ -14,6 +14,7 @@ function bashlib__include () {
       bashlib__download $BASHLIB_NAME/$i
     done
   fi
+  declare $BASHLIB_${BASHLIB_NAME^}_DIR=$BASHLIB_DIR/$BASHLIB_NAME
 }
 
 function bashlib__download () {
