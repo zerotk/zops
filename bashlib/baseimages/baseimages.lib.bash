@@ -1,11 +1,10 @@
 #!/bin/bash
-set -ou pipefail
+set -eou pipefail
 
 PACKER_VERSION="1.11"
-MOTOINSIGHT_UTILS_VERSION="v1.13.0"
+MOTOINSIGHT_UTILS_VERSION="${MOTOINSIGHT_UTILS_VERSION:-v1.14.0}"
 
 #============================================================================== Functions
-
 
 function env_check () {
   echo "env_check: $1"
@@ -25,7 +24,6 @@ function baseimages__build_image () {
     baseimages__build_ami $FILENAME
   fi
 }
-
 
 function baseimages__provision () {
   TARGET=$1;shift
@@ -73,8 +71,6 @@ function baseimages__build_docker () {
 function baseimages__build_ami () {
   local VARS_TEMPLATE=$1;shift
   local VARS_FILENAME=.build/$(basename "${VARS_TEMPLATE%.*}").vars.hcl
-
-  mkdir -p .build
 
   baseimages___check_vars $VARS_TEMPLATE $(baseimages___list_ami_vars $VARS_TEMPLATE)
   envsubst < $VARS_TEMPLATE > $VARS_FILENAME
@@ -149,6 +145,12 @@ function baseimages__run_packer () {
     PACKER_PLUGIN_PATH=.packer.d
     packer "$@"
   fi
+}
+
+# Bashlib protocol
+
+function baseimages__assets () {
+  echo "build-image.pkr.hcl"
 }
 
 # # CI
