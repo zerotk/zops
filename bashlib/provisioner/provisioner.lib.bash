@@ -8,12 +8,8 @@ IS_DOCKER=${IS_DOCKER:-false}
 function SETUP () {
   ( $IS_AMI ) && exec > >(tee /tmp/provisioner-$(whoami).log) 2>&1
 
-  export MOTOINSIGHT_UTILS_VERSION=${MOTOINSIGHT_UTILS_VERSION:-v1.13.0}
+  export MOTOINSIGHT_UTILS_VERSION=${MOTOINSIGHT_UTILS_VERSION:-v1.14.0}
 
-  if [[ -n ${AWS_CREDENTIALS-} ]]; then
-    export AWS_ACCESS_KEY_ID=${AWS_CREDENTIALS%,*}
-    export AWS_SECRET_ACCESS_KEY=${AWS_CREDENTIALS#*,}
-  fi
   export AWS_EC2_METADATA_DISABLED=1
   export AWS_DEFAULT_REGION=ca-central-1
 
@@ -59,7 +55,7 @@ function _FINISH () {
 
 function DOWNLOAD () {
   if [[ "$1" = "s3://"* ]]; then
-    AWS_ACCESS_KEY_ID=${AWS_CREDENTIALS%,*} AWS_SECRET_ACCESS_KEY=${AWS_CREDENTIALS#*,} aws s3 cp $1 ${1##*/}
+    aws s3 cp $1 ${1##*/}
   else
     wget --no-verbose "$@"
   fi

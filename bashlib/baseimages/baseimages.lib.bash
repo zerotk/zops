@@ -7,7 +7,11 @@ MOTOINSIGHT_UTILS_VERSION="${MOTOINSIGHT_UTILS_VERSION:-v1.14.0}"
 #============================================================================== Functions
 
 function env_check () {
-  echo "env_check: $1"
+  [[ $# -lt 1 ]] && echo "Usage: env_check <ENVIRONMENT VARIABLE>" && return 9
+  local VALUE="${!1-x}"
+  [[ "$VALUE" == "x" ]] && echo "env_check: ERROR: Missing environment variable: $1" && return 9
+  [[ -z "$VALUE" ]] && echo "env_check: ERROR: Empty environment variable: $1" && return 9
+  return 0
 }
 
 function baseimages__build_image () {
@@ -28,20 +32,17 @@ function baseimages__build_image () {
 function baseimages__provision () {
   TARGET=$1;shift
   SOURCE=$1;shift
-
   TARGET="./.build/$TARGET"
 
-  if [[ -d $TARGET ]]; then
-    return
-  fi
-
   mkdir -p "$(dirname $TARGET)"
-  if [[ "$SOURCE" == "git@"* ]]; then
+  if [[ "$SOURCE" == *"github.com"* ]]; then
     URL="${SOURCE%\#*}"
     REF="${SOURCE#*\#}"
     rm -rf "$TARGET"
+    [ -d $TARGET ] && rm -rf $TARGET
     git clone --quiet --depth 1 --branch $REF $URL $TARGET
   else
+    [ -d $TARGET ] && rm -rf $TARGET
     cp -R "$SOURCE" "$TARGET"
   fi
 }
@@ -53,7 +54,7 @@ function baseimages__build_docker () {
 
   # Obtain required arguments from the Dockerfile ARGs.
   DOCKERFILE_ARGS=$(baseimages___list_dockerfile_args $FILENAME)
-  baseimages___check_vars $FILENAME $DOCKERFILE_ARGS
+  baseimages___check_vars $FILENAME "$DOCKERFILE_ARGS"
 
   # Add --build-arg option for each ARG found above.
   build_args=""
@@ -72,7 +73,7 @@ function baseimages__build_ami () {
   local VARS_TEMPLATE=$1;shift
   local VARS_FILENAME=.build/$(basename "${VARS_TEMPLATE%.*}").vars.hcl
 
-  baseimages___check_vars $VARS_TEMPLATE $(baseimages___list_ami_vars $VARS_TEMPLATE)
+  baseimages___check_vars $VARS_TEMPLATE "$(baseimages___list_ami_vars $VARS_TEMPLATE)"
   envsubst < $VARS_TEMPLATE > $VARS_FILENAME
 
   # Note that we may or may not be running packer in a container. We use the relative path to the
@@ -111,21 +112,22 @@ function baseimages___check_vars () {
   [[ -z "$ALL_VARS" ]] && return
 
   missing_vars=0
+  echo "baseimages: Checking template variables..."
   for i_var in $ALL_VARS; do
-    # DEBUG: echo "Checking template variable '$i_var'"
     if [[ -z ${!i_var-} ]]; then
-      echo "$i_var=<NOT DEFINED>"
+      value='<NOT DEFINED>'
       ((missing_vars+=1))
-      continue
+    else
+      value=${!i_var}
     fi
-    echo "$i_var=${!i_var}"
+    echo "baseimages: - $i_var=${value}"
   done
 
   if [[ "$missing_vars" != 0 ]]; then
     echo "
-ERROR: Please define the missing variables before continuing.
-For AMIs, check the .vars.template.hcl files for details of each variable.
-For Dockerfiles, check the .Dockerfile ARGS.
+baseimages: ERROR: Please define the missing variables before continuing.
+baseimages:        For AMIs, check the .vars.template.hcl files for details of each variable.
+baseimages:        For Dockerfiles, check the .Dockerfile ARGS.
 " 1>&2
     exit $missing_vars
   fi
