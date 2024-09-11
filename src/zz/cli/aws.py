@@ -44,10 +44,24 @@ class AwsCli:
         """
         List ec2 instances.
         """
+        def asdict(item, attrs):
+            return {i: str(getattr(item, i)) for i in attrs}
+
         self.deps.shared["Singleton"][("AwsProvider", "aws")] = AwsProvider(profile=profile, region=region)
         cloud = self.cloud_factory(profile)
-        for i in cloud.list_ec2_instances():
-            self.console.item(i.instance_id)
+        instances = cloud.list_ec2_instances()
+
+        items = [
+            asdict(i, ["id", "image", "launch_time", "cpu_options", "state"])
+            for i in instances
+        ]
+        # for i in instances:
+        #     self.console.item(i.state)
+        #     self.console.item(i.state_reason)
+        #     self.console.item(i.usage_operation_update_time)
+        #     self.console.item(i.vpc_id)
+        #     break
+        self.cmd_wrapper.items(items)
 
     @click.command("ec2.shell")
     def ec2_shell(self):

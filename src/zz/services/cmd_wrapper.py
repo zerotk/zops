@@ -27,6 +27,8 @@ class CommandWrapper:
         for i, i_item in enumerate(items):
             if isinstance(i_item, str):
                 d = {"items": i_item}
+            elif isinstance(i_item, dict):
+                d = i_item
             elif hasattr(i_item, "as_dict"):
                 d = i_item.as_dict()
             elif hasattr(i_item, "__annotations__"):

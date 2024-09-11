@@ -266,6 +266,12 @@ clusters:
     regions:
       - ca-central-1
 
+  unhaggle:
+    aws_id: 244165182258
+    profile: mi-unhaggle
+    regions:
+      - ca-central-1
+
   mi-main:
     aws_id: 226874278664
     profile: mi-main
