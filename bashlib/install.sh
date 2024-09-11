@@ -1,6 +1,4 @@
 #!/bin/env bash
-# NOTE: Can't use -e when sourcing a file.
-set -ou pipefail
 
 BASHLIB_DIR=.bashlib
 
