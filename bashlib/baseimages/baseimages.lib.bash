@@ -38,7 +38,7 @@ function baseimages__provision () {
   TARGET="./.build/$TARGET"
 
   mkdir -p "$(dirname $TARGET)"
-  if [ "$SOURCE" == *"github.com"* ]; then
+  if [[ "$SOURCE" == *"github.com"* ]]; then
     URL="${SOURCE%\#*}"
     REF="${SOURCE#*\#}"
     rm -rf "$TARGET"
@@ -48,7 +48,7 @@ function baseimages__provision () {
       git -C $TARGET fetch --tags
       git -C $TARGET switch $REF
     fi
-  elif [ "$SOURCE" == "s3"* ]; then
+  elif [[ "$SOURCE" == "s3"* ]]; then
     UNARCHIVE $TARGET /opt/motoinsight
   else
     [ -d $TARGET ] && rm -rf $TARGET
