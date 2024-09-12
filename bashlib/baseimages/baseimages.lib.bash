@@ -48,8 +48,8 @@ function baseimages__provision () {
       git -C $TARGET fetch --tags
       git -C $TARGET switch $REF
     fi
-  elif [[ "$SOURCE" == "s3"* ]]; then
-    UNARCHIVE $TARGET /opt/motoinsight
+  elif [[ "$SOURCE" == "s3://"* ]]; then
+    UNARCHIVE $SOURCE $TARGET
   else
     [ -d $TARGET ] && rm -rf $TARGET
     cp -R "$SOURCE" "$TARGET"
