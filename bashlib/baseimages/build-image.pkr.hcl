@@ -13,12 +13,12 @@ variable "aws_profile" { default = null }
 variable "aws_region" { default = "ca-central-1" }
 variable "aws_role_arn" { default = "arn:aws:iam::050946403637:role/mi-shared-deployer2" }
 variable "instance_type" { default = "t3.large" }
+variable "use_security_group" { default = true }
 
 # Extra resources
 variable "provisioner_files" { default = {} }
 variable "provisioner_script" { type = string }
 variable "provisioner_env" { default = [] }
-
 
 data "amazon-ami" "source_ami" {
   profile = var.aws_profile
@@ -55,7 +55,7 @@ source "amazon-ebs" "image" {
   ami_virtualization_type = "hvm"
 
   associate_public_ip_address               = true
-  temporary_security_group_source_public_ip = true
+  temporary_security_group_source_public_ip = var.use_security_group
 
   instance_type = var.instance_type
   ssh_username  = "admin"
