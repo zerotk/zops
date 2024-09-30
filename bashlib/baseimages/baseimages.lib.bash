@@ -2,7 +2,6 @@
 set -eou pipefail
 
 PACKER_VERSION="1.11"
-MOTOINSIGHT_UTILS_VERSION="${MOTOINSIGHT_UTILS_VERSION:-v1.14.0}"
 
 source <(curl -s https://raw.githubusercontent.com/zerotk/zops/main/bashlib/install.sh)
 bashlib__include provisioner
@@ -50,6 +49,7 @@ function baseimages__provision () {
     fi
   elif [[ "$SOURCE" == "s3://"* ]]; then
     UNARCHIVE $SOURCE $TARGET
+    rm -f $(basename $SOURCE)
   else
     [ -d $TARGET ] && rm -rf $TARGET
     cp -R "$SOURCE" "$TARGET"

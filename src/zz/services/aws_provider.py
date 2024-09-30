@@ -41,6 +41,35 @@ class AwsProvider:
     def get_available_profiles(self):
         return self.session.available_profiles
 
+    def run_task(self, cluster, taskdef, *args):
+        # Starts the task.
+        ecs_client = self.ecs_client()
+        r = ecs_client.run_task(
+            cluster=cluster,
+            taskDefinition=taskdef,
+            overrides=dict(containerOverrides=[dict(name=taskdef, command=args)]),
+        )
+        try:
+            task_id = r["tasks"][0]["taskArn"]
+            task_id = task_id.split("/")[-1]
+        except (IndexError, KeyError):
+            raise RuntimeError(
+                f"Error while handling output for run_task for task {taskdef} on cluster {cluster}: {r}"
+            )
+
+        # Wait for the task execution
+        waiter = ecs_client.get_waiter("tasks_stopped")
+        waiter.wait(cluster=cluster, tasks=[task_id])
+
+        # Get the task logs.
+        logs_client = self.logs_client()
+        result = logs_client.get_log_events(
+            logGroupName=taskdef,
+            logStreamName=f"{taskdef}/{taskdef}/{task_id}",
+        )
+        result = [i["message"] for i in result["events"]]
+        result = "\n".join(result)
+        return result
 
 @deps.define
 class Cloud:
@@ -85,36 +114,6 @@ class AwsLocal:
     aws_local = deps.Singleton(AwsProvider, kwargs=dict(profile=None, region=None))
     cloud_factory = deps.Factory(Cloud)
 
-#     def run_task(self, cluster, taskdef, *args):
-#         # Starts the task.
-#         ecs_client = self.ecs_client()
-#         r = ecs_client.run_task(
-#             cluster=cluster,
-#             taskDefinition=taskdef,
-#             overrides=dict(containerOverrides=[dict(name=taskdef, command=args)]),
-#         )
-#         try:
-#             task_id = r["tasks"][0]["taskArn"]
-#             task_id = task_id.split("/")[-1]
-#         except (IndexError, KeyError):
-#             raise RuntimeError(
-#                 f"Error while handling output for run_task for task {taskdef} on cluster {cluster}: {r}"
-#             )
-#
-#         # Wait for the task execution
-#         waiter = ecs_client.get_waiter("tasks_stopped")
-#         waiter.wait(cluster=cluster, tasks=[task_id])
-#
-#         # Get the task logs.
-#         logs_client = self.logs_client()
-#         result = logs_client.get_log_events(
-#             logGroupName=taskdef,
-#             logStreamName=f"{taskdef}/{taskdef}/{task_id}",
-#         )
-#         result = [i["message"] for i in result["events"]]
-#         result = "\n".join(result)
-#         return result
-#
 #     def get_parameters(self, parameter_prefix) -> list[AwsParameter]:
 #         ssm_client = self.ssm_client()
 #         parameters_pages = ssm_client.get_paginator("get_parameters_by_path").paginate(

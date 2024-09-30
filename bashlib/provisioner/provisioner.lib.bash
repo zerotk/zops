@@ -8,8 +8,6 @@ IS_DOCKER=${IS_DOCKER:-false}
 function SETUP () {
   ( $IS_AMI ) && exec > >(tee /tmp/provisioner-$(whoami).log) 2>&1
 
-  export MOTOINSIGHT_UTILS_VERSION=${MOTOINSIGHT_UTILS_VERSION:-v1.14.0}
-
   export AWS_EC2_METADATA_DISABLED=1
   export AWS_DEFAULT_REGION=ca-central-1
 
