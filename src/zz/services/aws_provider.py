@@ -8,10 +8,19 @@ from zz.services.console import Console
 
 
 @deps.define
+class AwsParameter:
+    name: str = deps.field()
+    value: str = deps.field()
+    type_: str = deps.field()
+
+
+@deps.define
 class AwsProvider:
     """
     Encapsulate access to AWS API so we can mock it for testing.
     """
+
+    parameter_factory = deps.Factory(AwsParameter)
 
     profile: str = deps.field()
     region: str = deps.field()
@@ -28,6 +37,9 @@ class AwsProvider:
 
     def ecs_client(self) -> Any:
         return self.session.client("ecs")
+
+    def sqs_client(self) -> Any:
+        return self.session.client("sqs")
 
     def ecs_client(self) -> Any:
         return self.session.client("ecs")
@@ -71,6 +83,26 @@ class AwsProvider:
         result = "\n".join(result)
         return result
 
+    def get_parameters(self, parameter_prefix) -> list[dict]:
+        ssm_client = self.ssm_client()
+        parameters_pages = ssm_client.get_paginator("get_parameters_by_path").paginate(
+            Path=parameter_prefix,
+            Recursive=True,
+            WithDecryption=True,
+        )
+        result = []
+        for i_page in parameters_pages:
+            for j_parameter in i_page["Parameters"]:
+                result.append(
+                    dict(
+                        name=j_parameter["Name"],
+                        value=j_parameter.get("Value"),
+                        type_=j_parameter.get("Type"),
+                    )
+                )
+        return result
+
+
 @deps.define
 class Cloud:
 
@@ -102,36 +134,10 @@ class Cloud:
 
 
 @deps.define
-class AwsParameter:
-    name: str = deps.field()
-    value: str = deps.field()
-    type_: str = deps.field()
-
-
-@deps.define
 class AwsLocal:
 
     aws_local = deps.Singleton(AwsProvider, kwargs=dict(profile=None, region=None))
     cloud_factory = deps.Factory(Cloud)
-
-#     def get_parameters(self, parameter_prefix) -> list[AwsParameter]:
-#         ssm_client = self.ssm_client()
-#         parameters_pages = ssm_client.get_paginator("get_parameters_by_path").paginate(
-#             Path=parameter_prefix,
-#             Recursive=True,
-#             WithDecryption=True,
-#         )
-#         result = []
-#         for i_page in parameters_pages:
-#             for j_parameter in i_page["Parameters"]:
-#                 result.append(
-#                     self.parameter_factory(
-#                         name=j_parameter["Name"],
-#                         value=j_parameter.get("Value"),
-#                         type_=j_parameter.get("Type"),
-#                     )
-#                 )
-#         return result
 
     def list_clouds(self):
         for i_profile in self.aws_local.get_available_profiles():

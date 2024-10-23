@@ -26,6 +26,8 @@ aws_profiles_map:
   peb: "mi-tier3"
   pi: "mi-pi"
   qa: "mi-qa"
+  ps: "mi-qa"
+  perf: "mi-qa"
   sandbox: "mi-sandbox"
   stage: "mi-stage"
   unhaggle: "mi-unhaggle"

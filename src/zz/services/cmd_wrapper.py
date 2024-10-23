@@ -43,5 +43,8 @@ class CommandWrapper:
                     table.add_column(j)
             table.add_row(*d.values())
 
-        console = Console()
-        console.print(table)
+        self.console._print(table)
+
+
+    def json(self, content):
+        self.console._print(content)

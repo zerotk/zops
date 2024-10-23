@@ -112,6 +112,8 @@ class Cluster:
         "nomad": "internal",
         "pi": "paymentinsights",
         "qa": "mi-qa",
+        "ps": "mi-qa",
+        "perf": "mi-qa",
         "sandbox": "mi-sandbox",
         "stage": "mi-stage",
     }
