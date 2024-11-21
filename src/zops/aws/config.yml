@@ -126,7 +126,6 @@ clusters:
     profile: mi-qa
     regions:
       - ca-central-1
-      - us-east-2
     images: []
 
   mi-prod:
