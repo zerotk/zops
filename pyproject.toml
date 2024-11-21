@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zerotk.zops"
-version = "2.0.0b3"
+version = "2.0.0b4"
 description = "Zero Operations Toolbox"
 authors = ["Alexandre Andrade <kaniabi@gmail.com>"]
 license = "MIT"
@@ -16,6 +16,7 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.11',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
 ]
 packages = [
   { include = "zerotk", from = "src" },
