@@ -4,6 +4,8 @@ from zerotk import deps
 from zz.services.aws_provider import Cloud, AwsLocal, AwsProvider
 from zz.services.cmd_wrapper import CommandWrapper
 from zz.services.console import Console
+from addict import Dict as AttrDict
+import datetime
 
 
 @deps.define
@@ -44,15 +46,27 @@ class AwsCli:
         """
         List ec2 instances.
         """
+        def my_getattr(obj, attr):
+            result = obj
+            for i in attr.split("."):
+                result = getattr(result, i)
+                if i == "tags":
+                    result = AttrDict({i["Key"]: i["Value"] for i in result})
+                elif isinstance(result, dict):
+                    result = AttrDict(result)
+                elif isinstance(result, datetime.datetime):
+                    result = result.strftime("%Y-%m-%d %H:%M")
+            return str(result)
+
         def asdict(item, attrs):
-            return {i: str(getattr(item, i)) for i in attrs}
+            return {i: my_getattr(item, i) for i in attrs}
 
         self.deps.shared["Singleton"][("AwsProvider", "aws")] = AwsProvider(profile=profile, region=region)
         cloud = self.cloud_factory(profile)
         instances = cloud.list_ec2_instances()
 
         items = [
-            asdict(i, ["id", "image", "launch_time", "cpu_options", "state"])
+            asdict(i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"])
             for i in instances
         ]
         # for i in instances:

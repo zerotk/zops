@@ -48,7 +48,6 @@ class AnatomyPlaybook:
         return variables
 
     def _add_feature(self, feature_name, skip_features=[]):
-        # print("INSIDE", id(self._features), len(self._features))
         feature = self.registry.get(feature_name)
 
         # Check if we already loaded a feature with the same name and if that's the case check if

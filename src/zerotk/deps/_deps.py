@@ -171,8 +171,6 @@ class Deps:
 
 def instance__post_init(self):
     dependencies = {}
-    parent_name = "XXX"
-
     assert hasattr(self, "deps")
     for i_name, i_decl in self.__deps_decl__.items():
         dependency = dependencies[i_name] = i_decl.create(self, i_name)

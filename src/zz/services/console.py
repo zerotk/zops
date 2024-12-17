@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 import attrs
-from rich.console import Console
+from rich import console
 
 from zerotk import deps
 
@@ -29,7 +29,7 @@ class Console:
 
     verbose_level: int = deps.field(default=0)
     _blocks = OrderedDict()
-    _console = Console(highlight=False)
+    _console = console.Console(highlight=False)
 
     @attrs.define
     class ConsoleStyle:
@@ -145,7 +145,8 @@ class Console:
         self._print(message=message, style=style)
 
     def _print(self, message, style=ConsoleStyle()):
-        message = style.format_message(message)
+        # TODO: Check if this is still pertinent when using rich library.
+        # message = style.format_message(message)
         self._console.print(message)
 
     #     def _format_message(self, message: str, prefix: str, indent: int, style: str):

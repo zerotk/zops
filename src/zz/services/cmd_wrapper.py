@@ -16,8 +16,6 @@ class CommandWrapper:
     console = deps.Singleton(Console)
 
     def items(self, items, header=False):
-        # TODO: Move rich hangling to zz.services.Console.
-        from rich.console import Console
         from rich.table import Table
 
         table = Table()
