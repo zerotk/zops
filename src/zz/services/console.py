@@ -145,8 +145,9 @@ class Console:
         self._print(message=message, style=style)
 
     def _print(self, message, style=ConsoleStyle()):
-        # TODO: Check if this is still pertinent when using rich library.
-        # message = style.format_message(message)
+        import rich.table
+        if not isinstance(message, rich.table.Table):
+            message = style.format_message(message)
         self._console.print(message)
 
     #     def _format_message(self, message: str, prefix: str, indent: int, style: str):

@@ -39,42 +39,53 @@ class AwsCli:
             """
         )
 
+    @classmethod
+    def _getattr(cls, obj, attr):
+        result = obj
+        for i in attr.split("."):
+            result = getattr(result, i)
+            if i == "tags":
+                result = AttrDict({i["Key"]: i["Value"] for i in result})
+            elif isinstance(result, dict):
+                result = AttrDict(result)
+            elif isinstance(result, datetime.datetime):
+                result = result.strftime("%Y-%m-%d %H:%M")
+        return str(result)
+
+    @classmethod
+    def _asdict(cls, item, attrs):
+        return {i: cls._getattr(item, i) for i in attrs}
+
+
     @click.command("ec2.list")
     @click.argument("profile")
     @click.argument("region", default="ca-central-1")
     def ec2_list(self, profile, region):
         """
         List ec2 instances.
+
+        ec2.list mi-tier3(profile)
+        ec2.list tier3-prod-app(asg)
+        ec2.list tier3(project)
+        ec2.list tier3-stage(deployment)
+
+        * The input is a seed that can be a aws_profile, asg, project, deployment
+        * From the seed define wich aws_accounts, regions and filters we have to use:
+            * aws-profile: easy, just list all instances
+            * asg: obtain aws_profile+region and a list of instances that are part of the ASG
+            * project: obtain aws_profile+region and a prefix (eg.: tier3) or tag filter
+            * deployment: obtain aws_profile+region and the prefix (eg.: tier3-prod) or tag filters.
         """
-        def my_getattr(obj, attr):
-            result = obj
-            for i in attr.split("."):
-                result = getattr(result, i)
-                if i == "tags":
-                    result = AttrDict({i["Key"]: i["Value"] for i in result})
-                elif isinstance(result, dict):
-                    result = AttrDict(result)
-                elif isinstance(result, datetime.datetime):
-                    result = result.strftime("%Y-%m-%d %H:%M")
-            return str(result)
-
-        def asdict(item, attrs):
-            return {i: my_getattr(item, i) for i in attrs}
-
-        self.deps.shared["Singleton"][("AwsProvider", "aws")] = AwsProvider(profile=profile, region=region)
-        cloud = self.cloud_factory(profile)
+        cloud = self.cloud_factory(profile, region)
+        images = {i.image_id: i for i in cloud.list_ami_images()}
         instances = cloud.list_ec2_instances()
+        for i in instances:
+            i.image = images.get(i.image_id, None)
 
         items = [
-            asdict(i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"])
+            self._asdict(i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"])
             for i in instances
         ]
-        # for i in instances:
-        #     self.console.item(i.state)
-        #     self.console.item(i.state_reason)
-        #     self.console.item(i.usage_operation_update_time)
-        #     self.console.item(i.vpc_id)
-        #     break
         self.cmd_wrapper.items(items)
 
     @click.command("ec2.shell")
@@ -120,11 +131,19 @@ class AwsCli:
         pass
 
     @click.command("ami.list")
-    def ami_list(self):
+    @click.argument("profile")
+    @click.argument("region", default="ca-central-1")
+    def ami_list(self, profile, region):
         """
         List AMI images.
         """
-        pass
+        cloud = self.cloud_factory(profile, region)
+        items = cloud.list_ami_images()
+        items = [
+            self._asdict(i, ["creation_date", "image_id", "name"])
+            for i in items
+        ]
+        self.cmd_wrapper.items(items)
 
     @click.command("ami.deregister")
     def ami_build(self):

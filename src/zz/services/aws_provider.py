@@ -106,14 +106,19 @@ class AwsProvider:
 @deps.define
 class Cloud:
 
-    aws = deps.Singleton(AwsProvider, request=True)
+    aws_factory = deps.Factory(AwsProvider)
 
     profile_name: str
+    region: str
+
+    @property
+    def _aws(self):
+        return self.aws_factory(profile=self.profile_name, region=self.region)
 
     @property
     def account_id(self):
         try:
-            client = self.aws.sts_client()
+            client = self._aws.sts_client()
             result = client.get_caller_identity()['Account']
         except exceptions.NoCredentialsError:
             result = "<NO CREDENTIALS>"
@@ -123,12 +128,21 @@ class Cloud:
 
     def list_ec2_instances(self, sort_by="launch_time"):
         import operator
-        ec2 = self.aws.ec2_resource()
+        ec2 = self._aws.ec2_resource()
         return [i for i in sorted(ec2.instances.filter(), key=operator.attrgetter(sort_by))]
+
+    def list_ami_images(self, sort_by="creation_date"):
+        """
+        TODO: How to configure owners as a list of known accounts?
+        """
+        import operator
+        ec2 = self._aws.ec2_resource()
+        return [i for i in sorted(ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by))]
 
     def as_dict(self):
         return dict(
             profile_name=self.profile_name,
+            region=self.region,
             account_id=self.account_id,
         )
 
