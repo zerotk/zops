@@ -9,7 +9,6 @@ aws_owners:
 # Maps directories with cluster names.
 clusters_map:
   "/creditapp": "mi-tier3"
-  "/paymentinsights": "mi-pi"
   "/tier1": "tier1"
   "/tier3": "mi-tier3"
   "/t3can": "mi-tier3"
