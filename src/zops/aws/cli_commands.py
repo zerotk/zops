@@ -703,7 +703,10 @@ def resources_clean(clusters, region, yes):
         instances = ec2.instances.filter(Filters=INSTANCES_FILTER)
         for i in instances:
             name_tag = [j["Value"] for j in i.tags if j["Key"] == "Name"]
-            name_tag = name_tag[0]
+            if name_tag:
+                name_tag = name_tag[0]
+            else:
+                name_tag = "<noname>"
             click.echo(f"  * {i.id}: {name_tag} - {i.state['Name']}")
 
         click.echo("* Volumes:")
