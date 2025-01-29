@@ -841,7 +841,7 @@ def ecr_list(repos, cluster, region):
                 image_size = round(i["imageSizeInBytes"] / (1024 * 1024), 2)
                 if images_tags:
                     print(
-                        "* {registryId}.dkr.ecr.{region}.amazonaws.com/{repositoryName}:{images_tags} ({image_size}Mb) - {imagePushedAt} ".format(
+                        "* {imageDigest} {registryId}.dkr.ecr.{region}.amazonaws.com/{repositoryName}:{images_tags} ({image_size}Mb) - {imagePushedAt} ".format(
                             images_tags=images_tags,
                             image_size=image_size,
                             region=region,
