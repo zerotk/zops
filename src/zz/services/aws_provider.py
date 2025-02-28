@@ -104,9 +104,24 @@ class AwsProvider:
 
 
 @deps.define
+class Instance:
+    """
+    Wraps boto3.ec2.Instance object so we can add more attributes to it (like image)
+    """
+
+    boto_instance: object
+
+    def __getattr__(self, name):
+        # DEBUG:
+        # print(f"Instance.__getattr__({name})")
+        return getattr(self.boto_instance, name)
+
+
+@deps.define
 class Cloud:
 
     aws_factory = deps.Factory(AwsProvider)
+    instance_factory = deps.Factory(Instance)
 
     profile_name: str
     region: str
@@ -129,7 +144,21 @@ class Cloud:
     def list_ec2_instances(self, sort_by="launch_time"):
         import operator
         ec2 = self._aws.ec2_resource()
-        return [i for i in sorted(ec2.instances.filter(), key=operator.attrgetter(sort_by))]
+        result = [
+            self.instance_factory(i)
+            for i
+            in sorted(ec2.instances.filter(), key=operator.attrgetter(sort_by))
+        ]
+        # Add 'image' attribute to all instances.
+        images = {i.image_id: i for i in ec2.images.filter(Owners=["self"])}
+        # DEBUG:
+        # print(f"images: {images}")
+        for i in result:
+            image = images.get(i.image_id, None)
+            # DEBUG:
+            # print(f"image: {image}")
+            i.image = image
+        return result
 
     def list_ami_images(self, sort_by="creation_date"):
         """
@@ -137,7 +166,11 @@ class Cloud:
         """
         import operator
         ec2 = self._aws.ec2_resource()
-        return [i for i in sorted(ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by))]
+        return [
+            i
+            for i
+            in sorted(ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by))
+        ]
 
     def as_dict(self):
         return dict(

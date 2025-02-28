@@ -376,7 +376,6 @@ def ec2_start(instance_names):
     load_config()
     CLUSTER_MAP = {
         "bp": "buildandprice",
-        "pi": "paymentinsights",
         "audi": "tier1_audi",
     }
 

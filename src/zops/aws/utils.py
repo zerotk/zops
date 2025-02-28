@@ -24,7 +24,7 @@ def get_resource_attr(obj, attr):
     result = ""
     if attr.startswith("tags:"):
         tag_name = attr.split(":")[-1]
-        if not obj.tags:
+        if not getattr(obj, "tags", False):
             result = "-"
         else:
             for i_tag in obj.tags:

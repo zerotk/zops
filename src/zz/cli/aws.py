@@ -40,7 +40,7 @@ class AwsCli:
         )
 
     @classmethod
-    def _getattr(cls, obj, attr):
+    def _getattr(cls, obj, attr, default=None):
         result = obj
         for i in attr.split("."):
             result = getattr(result, i)
@@ -50,11 +50,13 @@ class AwsCli:
                 result = AttrDict(result)
             elif isinstance(result, datetime.datetime):
                 result = result.strftime("%Y-%m-%d %H:%M")
+            elif result is None:
+                return default
         return str(result)
 
     @classmethod
     def _asdict(cls, item, attrs):
-        return {i: cls._getattr(item, i) for i in attrs}
+        return {i: cls._getattr(item, i, "?") for i in attrs}
 
 
     @click.command("ec2.list")
@@ -77,11 +79,7 @@ class AwsCli:
             * deployment: obtain aws_profile+region and the prefix (eg.: tier3-prod) or tag filters.
         """
         cloud = self.cloud_factory(profile, region)
-        images = {i.image_id: i for i in cloud.list_ami_images()}
         instances = cloud.list_ec2_instances()
-        for i in instances:
-            i.image = images.get(i.image_id, None)
-
         items = [
             self._asdict(i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"])
             for i in instances
