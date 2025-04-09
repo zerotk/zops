@@ -13,10 +13,11 @@ class SubProcess:
 
     class Result:
 
-        def __init__(self, cmd_line, retcode, output):
+        def __init__(self, cmd_line, retcode, output, error):
             self.cmd_line = cmd_line
             self.retcode = retcode
             self.output = output
+            self.error = error
 
         def is_error(self):
             return self.retcode != 0
@@ -44,12 +45,16 @@ class SubProcess:
 
         proc = await asyncio.create_subprocess_shell(
             cmd_line,
-            stderr=asyncio.subprocess.STDOUT,
+            stderr=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             cwd=str(cwd),
         )
-        stdout, _ = await proc.communicate()
-        stdout = stdout.decode("UTF-8")
-        result = self.Result(cmd_line=cmd_line, retcode=proc.returncode, output=stdout)
+        (stdout, stderr) = await proc.communicate()
+        result = self.Result(
+            cmd_line=cmd_line,
+            retcode=proc.returncode,
+            output=stdout.decode("UTF-8"),
+            error=stderr.decode("UTF-8"),
+            )
         self.execution_logs.append(result)
         return result

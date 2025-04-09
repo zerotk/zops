@@ -2,6 +2,8 @@ import asyncio
 import pathlib
 
 import addict
+import typing
+import re
 
 from zerotk import deps
 
@@ -244,11 +246,11 @@ class Terraform:
                 await self._run_apply(workdir, deployment, workspace)
         except self.ExecutionError as e:
             self.console.update_block(
-                title, f"[red]error:[/red] {e.__class__.__name__}"
+                title, f"[red]error: (NOT HERE DEBUG)[/red] {e.__class__.__name__}"
             )
         except Exception as e:
             self.console.update_block(
-                title, f"[red]error:[/red] {e.__class__.__name__}"
+                title, f"[red]error: (NOT HERE DEBUG)[/red] {e.__class__.__name__}"
             )
             raise
         return result
@@ -311,7 +313,9 @@ class Terraform:
             self.console.create_block(title, "...")
             titles[i_deployment] = title
 
-        self._semaphores = {i: asyncio.Semaphore(1) for i in workdirs}
+        self._workdir_semaphores = {i: asyncio.Semaphore(1) for i in workdirs}
+        self._plan_semaphore = asyncio.Semaphore(1)
+        self._report_semaphore = asyncio.Semaphore(1)
         generate_report_functions = [
             self._generate_report(
                 i_workdir,
@@ -319,7 +323,9 @@ class Terraform:
                 i_workspace,
                 title=titles[i_deployment],
                 skip_plan=skip_plan,
-                semaphore=self._semaphores[i_workdir],
+                workdir_semaphore=self._workdir_semaphores[i_workdir],
+                plan_semaphore=self._plan_semaphore,
+                report_semaphore=self._report_semaphore,
             )
             for i_workdir, i_deployment, i_workspace in deployments
         ]
@@ -337,7 +343,9 @@ class Terraform:
         workspace: str,
         title: str,
         skip_plan: bool = False,
-        semaphore: asyncio.Semaphore = None,
+        workdir_semaphore: asyncio.Semaphore = None,
+        plan_semaphore: asyncio.Semaphore = None,
+        report_semaphore: asyncio.Semaphore = None,
     ):
         workspace = workspace or deployment
         result = addict.Dict(
@@ -345,22 +353,25 @@ class Terraform:
             workspace=workspace,
             workdir=workdir,
             changes=[],
+            errors=[],
         )
         try:
             self.console.update_block(title, f"waiting for {workdir}")
-            async with semaphore:
+            async with workdir_semaphore, plan_semaphore:
                 self.console.update_block(title, "plan")
                 tf_plan = await self._run_plan(
                     workdir, deployment, workspace, skip_plan
                 )
 
-            self.console.update_block(title, "report")
-            result = addict.Dict(
-                deployment=deployment,
-                workspace=workspace,
-                workdir=workdir,
-                changes=await self._generate_changes(workdir, tf_plan),
-            )
+            async with report_semaphore:
+                self.console.update_block(title, "report")
+                result = addict.Dict(
+                    deployment=deployment,
+                    workspace=workspace,
+                    workdir=workdir,
+                    changes=await self._generate_changes(workdir, tf_plan),
+                    errors=[],
+                )
             count = len(result["changes"])
             if count == 0:
                 self.console.update_block(title, "[green]no changes[/green]")
@@ -368,13 +379,14 @@ class Terraform:
                 self.console.update_block(title, f"[yellow]{count} change(s)[/yellow]")
         except self.ExecutionError as e:
             self.console.update_block(
-                title, f"[red]error:[/red] {e.__class__.__name__}"
+                title, f"[red]error (ExecutionError):[/red] {e}"
             )
+            result.errors.append(e)
         except Exception as e:
             self.console.update_block(
-                title, f"[red]error:[/red] {e.__class__.__name__}"
+                title, f"[red]error (Exception):[/red] {e.__class__.__name__}"
             )
-            raise
+            result.errors.append(e)
         return result
 
     async def _run_plan(
@@ -399,7 +411,7 @@ class Terraform:
                 cmd_line += f" -var-file {var_file}"
             select_workspace = workspace or deployment
 
-        if not skip_plan or not (workdir / tfplan_json).exists():
+        if not skip_plan:
             if select_workspace:
                 r = await self.subprocess.run_async(
                     f"terraform workspace select {select_workspace}", cwd=workdir
@@ -409,6 +421,11 @@ class Terraform:
 
             r = await self.subprocess.run_async(cmd_line, cwd=workdir)
             if r.is_error():
+                if "Error acquiring the state lock" in r.error:
+                    match = re.search(r"ID:\s+([a-f0-9-]+)", r.error)
+                    lock_id = match.group(1) if match else "unknown"
+                    r.retcode = 0
+                    raise self.ExecutionError(f"Locked: {lock_id}")
                 raise self.ExecutionError(r)
 
             r = await self.subprocess.run_async(
@@ -417,7 +434,14 @@ class Terraform:
             if r.is_error():
                 raise self.ExecutionError(r)
 
-            (workdir / tfplan_json).write_text(r.output)
+            # Cleanup output to remove eventual error messages.
+            # Eg.:
+            #   2025-03-04T12:59:40.762Z [ERROR] provider: error encountered while scanning stdout: error="read |0: file already closed"
+            try:
+                output = "\n".join([i for i in r.output.splitlines() if i.startswith("{")])
+                (workdir / tfplan_json).write_text(output)
+            except Exception as e:
+                raise self.ExecutionError(str(e))
 
         return self.filesystem.read_json(workdir / tfplan_json)
 
@@ -528,8 +552,7 @@ class Terraform:
                 continue
             result = False
             self.console.error(
-                f"Execution failed for '{i_result.cmd_line}' (retcode: {i_result.retcode})",
-                i_result.output,
+                f"Execution failed for '{i_result.cmd_line}' (retcode: {i_result.retcode})\n{i_result.error}",
             )
         return result
 
