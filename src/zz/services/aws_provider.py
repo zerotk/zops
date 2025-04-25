@@ -35,6 +35,9 @@ class AwsProvider:
     def ec2_resource(self) -> Any:
         return self.session.resource("ec2", region_name=self.region)
 
+    def rds_client(self) -> Any:
+        return self.session.client("rds")
+
     def ecs_client(self) -> Any:
         return self.session.client("ecs")
 
@@ -49,6 +52,9 @@ class AwsProvider:
 
     def ssm_client(self) -> Any:
         return self.session.client("ssm")
+
+    def secrets_client(self) -> Any:
+        return self.session.client("secretsmanager")
 
     def get_available_profiles(self):
         return self.session.available_profiles
@@ -158,6 +164,32 @@ class Cloud:
             # DEBUG:
             # print(f"image: {image}")
             i.image = image
+        return result
+
+    def list_rds_snapshots(self, sort_by="Status"):
+        import operator
+        from addict import Dict as AttrDict
+
+        rds = self._aws.rds_client()
+        result = rds.describe_db_snapshots(IncludeShared=True)["DBSnapshots"]
+        result = [
+            AttrDict(i)
+            for i
+            in sorted(result, key=operator.itemgetter(sort_by))
+        ]
+        return result
+
+    def list_secrets(self, sort_by="Name"):
+        import operator
+        from addict import Dict as AttrDict
+
+        secrets = self._aws.secrets_client()
+        result = secrets.list_secrets(IncludePlannedDeletion=True)["SecretList"]
+        result = [
+            AttrDict(i)
+            for i
+            in sorted(result, key=operator.itemgetter(sort_by))
+        ]
         return result
 
     def list_ami_images(self, sort_by="creation_date"):

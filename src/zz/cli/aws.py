@@ -163,3 +163,33 @@ class AwsCli:
         Updates an ASG (auto scaling group).
         """
         pass
+
+    @click.command("rds.list_snapshots")
+    @click.argument("profile")
+    @click.argument("region", default="ca-central-1")
+    def rds_list_snapshots(self, profile, region):
+        """
+        List rds/aurora snapshots.
+        """
+        cloud = self.cloud_factory(profile, region)
+        snapshots = cloud.list_rds_snapshots()
+        items = [
+            self._asdict(i, ["DBSnapshotIdentifier", "SnapshotCreateTime", "Status"])
+            for i in snapshots
+        ]
+        self.cmd_wrapper.items(items)
+
+    @click.command("secrets.list")
+    @click.argument("profile")
+    @click.argument("region", default="ca-central-1")
+    def secrets_list(self, profile, region):
+        """
+        List rds/aurora snapshots.
+        """
+        cloud = self.cloud_factory(profile, region)
+        secrets = cloud.list_secrets()
+        items = [
+            self._asdict(i, ["Name", "Description", "DeletedDate"])
+            for i in secrets
+        ]
+        self.cmd_wrapper.items(items)
