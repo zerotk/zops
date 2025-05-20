@@ -43,6 +43,5 @@ class CommandWrapper:
 
         self.console._print(table)
 
-
     def json(self, content):
         self.console._print(content)

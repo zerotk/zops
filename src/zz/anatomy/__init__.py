@@ -1,8 +1,8 @@
 from zerotk import deps
+from zz.anatomy.layers.playbook import AnatomyPlaybook
+from zz.anatomy.layers.registry import AnatomyFeatureRegistry
 from zz.services.console import Console
 from zz.services.filesystem import FileSystem
-from zz.anatomy.layers.registry import AnatomyFeatureRegistry
-from zz.anatomy.layers.playbook import AnatomyPlaybook
 
 
 @deps.define

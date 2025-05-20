@@ -241,7 +241,21 @@ def merge_dict(d1, d2, left_join=True):
     return _merge_dict(d1, d2, depth=0, left_join=left_join)
 
 
+def _clean_keys(d1, d2, left_join=False, depth=0):
+
+    if left_join and depth < 2:
+        result = d1.keys()
+        right_keys = set(d2.keys())
+        right_keys = right_keys.difference(set(d1.keys()))
+        if right_keys:
+            raise RuntimeError("Extra keys: {}".format(right_keys))
+    else:
+        result = list(d1.keys()) + [i for i in d2.keys() if i not in d1]
+    return result
+
+
 def _merge_dict(d1, d2, depth=0, left_join=True):
+
     def merge_value(v1, v2, override=False):
         if v2 is None:
             return v1
@@ -262,15 +276,7 @@ def _merge_dict(d1, d2, depth=0, left_join=True):
     )
 
     d2_cleaned = {i.rstrip("!"): j for (i, j) in d2.items()}
-
-    if left_join and depth < 2:
-        keys = d1.keys()
-        right_keys = set(d2_cleaned.keys())
-        right_keys = right_keys.difference(set(d1.keys()))
-        if right_keys:
-            raise RuntimeError("Extra keys: {}".format(right_keys))
-    else:
-        keys = list(d1.keys()) + [i for i in d2_cleaned.keys() if i not in d1]
+    keys = _clean_keys(d1, d2_cleaned, depth=depth, left_join=left_join)
 
     result = OrderedDict()
     for i_key in keys:

@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from zerotk import deps
 from dataclasses import dataclass
 
 

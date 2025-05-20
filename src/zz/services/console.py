@@ -146,6 +146,7 @@ class Console:
 
     def _print(self, message, style=ConsoleStyle()):
         import rich.table
+
         if not isinstance(message, rich.table.Table):
             message = style.format_message(message)
         self._console.print(message)

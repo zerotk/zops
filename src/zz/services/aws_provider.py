@@ -4,7 +4,6 @@ import boto3
 from botocore import exceptions
 
 from zerotk import deps
-from zz.services.console import Console
 
 
 @deps.define
@@ -43,9 +42,6 @@ class AwsProvider:
 
     def sqs_client(self) -> Any:
         return self.session.client("sqs")
-
-    def ecs_client(self) -> Any:
-        return self.session.client("ecs")
 
     def logs_client(self) -> Any:
         return self.session.client("logs")
@@ -140,7 +136,7 @@ class Cloud:
     def account_id(self):
         try:
             client = self._aws.sts_client()
-            result = client.get_caller_identity()['Account']
+            result = client.get_caller_identity()["Account"]
         except exceptions.NoCredentialsError:
             result = "<NO CREDENTIALS>"
         except Exception as e:
@@ -149,11 +145,11 @@ class Cloud:
 
     def list_ec2_instances(self, sort_by="launch_time"):
         import operator
+
         ec2 = self._aws.ec2_resource()
         result = [
             self.instance_factory(i)
-            for i
-            in sorted(ec2.instances.filter(), key=operator.attrgetter(sort_by))
+            for i in sorted(ec2.instances.filter(), key=operator.attrgetter(sort_by))
         ]
         # Add 'image' attribute to all instances.
         images = {i.image_id: i for i in ec2.images.filter(Owners=["self"])}
@@ -168,28 +164,22 @@ class Cloud:
 
     def list_rds_snapshots(self, sort_by="Status"):
         import operator
+
         from addict import Dict as AttrDict
 
         rds = self._aws.rds_client()
         result = rds.describe_db_snapshots(IncludeShared=True)["DBSnapshots"]
-        result = [
-            AttrDict(i)
-            for i
-            in sorted(result, key=operator.itemgetter(sort_by))
-        ]
+        result = [AttrDict(i) for i in sorted(result, key=operator.itemgetter(sort_by))]
         return result
 
     def list_secrets(self, sort_by="Name"):
         import operator
+
         from addict import Dict as AttrDict
 
         secrets = self._aws.secrets_client()
         result = secrets.list_secrets(IncludePlannedDeletion=True)["SecretList"]
-        result = [
-            AttrDict(i)
-            for i
-            in sorted(result, key=operator.itemgetter(sort_by))
-        ]
+        result = [AttrDict(i) for i in sorted(result, key=operator.itemgetter(sort_by))]
         return result
 
     def list_ami_images(self, sort_by="creation_date"):
@@ -197,11 +187,13 @@ class Cloud:
         TODO: How to configure owners as a list of known accounts?
         """
         import operator
+
         ec2 = self._aws.ec2_resource()
         return [
             i
-            for i
-            in sorted(ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by))
+            for i in sorted(
+                ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by)
+            )
         ]
 
     def as_dict(self):

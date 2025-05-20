@@ -54,7 +54,9 @@ class CodegenEngine:
             for j_name, j_values in _get_dataset_items(datasets, dataset_index):
                 self.console.title(f"{dataset_index}::{j_name}")
                 for k_filename in filenames:
-                    filename = self.filesystem.Path(k_filename.replace("__name__", j_name))
+                    filename = self.filesystem.Path(
+                        k_filename.replace("__name__", j_name)
+                    )
                     filename = playbook_filename.parent.parent / filename
                     self.console.item(str(filename))
                     contents = self.template_engine.run(

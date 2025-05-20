@@ -1,9 +1,8 @@
 import asyncio
 import pathlib
+import re
 
 import addict
-import typing
-import re
 
 from zerotk import deps
 
@@ -378,9 +377,7 @@ class Terraform:
             else:
                 self.console.update_block(title, f"[yellow]{count} change(s)[/yellow]")
         except self.ExecutionError as e:
-            self.console.update_block(
-                title, f"[red]error (ExecutionError):[/red] {e}"
-            )
+            self.console.update_block(title, f"[red]error (ExecutionError):[/red] {e}")
             result.errors.append(e)
         except Exception as e:
             self.console.update_block(
@@ -438,7 +435,9 @@ class Terraform:
             # Eg.:
             #   2025-03-04T12:59:40.762Z [ERROR] provider: error encountered while scanning stdout: error="read |0: file already closed"
             try:
-                output = "\n".join([i for i in r.output.splitlines() if i.startswith("{")])
+                output = "\n".join(
+                    [i for i in r.output.splitlines() if i.startswith("{")]
+                )
                 (workdir / tfplan_json).write_text(output)
             except Exception as e:
                 raise self.ExecutionError(str(e))

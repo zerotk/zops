@@ -55,6 +55,6 @@ class SubProcess:
             retcode=proc.returncode,
             output=stdout.decode("UTF-8"),
             error=stderr.decode("UTF-8"),
-            )
+        )
         self.execution_logs.append(result)
         return result

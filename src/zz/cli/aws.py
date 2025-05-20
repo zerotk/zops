@@ -1,11 +1,13 @@
+import datetime
+
 import click
+from addict import Dict as AttrDict
 
 from zerotk import deps
-from zz.services.aws_provider import Cloud, AwsLocal, AwsProvider
+from zz.services.aws_provider import AwsLocal
+from zz.services.aws_provider import Cloud
 from zz.services.cmd_wrapper import CommandWrapper
 from zz.services.console import Console
-from addict import Dict as AttrDict
-import datetime
 
 
 @deps.define
@@ -58,7 +60,6 @@ class AwsCli:
     def _asdict(cls, item, attrs):
         return {i: cls._getattr(item, i, "?") for i in attrs}
 
-
     @click.command("ec2.list")
     @click.argument("profile")
     @click.argument("region", default="ca-central-1")
@@ -81,7 +82,9 @@ class AwsCli:
         cloud = self.cloud_factory(profile, region)
         instances = cloud.list_ec2_instances()
         items = [
-            self._asdict(i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"])
+            self._asdict(
+                i, ["launch_time", "id", "tags.Name", "state.Name", "image.id"]
+            )
             for i in instances
         ]
         self.cmd_wrapper.items(items)
@@ -137,10 +140,7 @@ class AwsCli:
         """
         cloud = self.cloud_factory(profile, region)
         items = cloud.list_ami_images()
-        items = [
-            self._asdict(i, ["creation_date", "image_id", "name"])
-            for i in items
-        ]
+        items = [self._asdict(i, ["creation_date", "image_id", "name"]) for i in items]
         self.cmd_wrapper.items(items)
 
     @click.command("ami.deregister")
@@ -189,7 +189,6 @@ class AwsCli:
         cloud = self.cloud_factory(profile, region)
         secrets = cloud.list_secrets()
         items = [
-            self._asdict(i, ["Name", "Description", "DeletedDate"])
-            for i in secrets
+            self._asdict(i, ["Name", "Description", "DeletedDate"]) for i in secrets
         ]
         self.cmd_wrapper.items(items)

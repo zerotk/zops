@@ -1,9 +1,11 @@
+import pathlib
 from collections import OrderedDict
+
 from zerotk import deps
 from zerotk.yaml import yaml_from_file
+
 from .registry import AnatomyFeatureRegistry
 from .tree import AnatomyTree
-import pathlib
 
 
 @deps.define
