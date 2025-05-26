@@ -151,11 +151,19 @@ class AwsCli:
         pass
 
     @click.command("asg.list")
-    def asg_list(self):
+    @click.argument("profile")
+    @click.argument("region", default="ca-central-1")
+    def asg_list(self, profile, region):
         """
         List ASGs (auto scaling groups).
         """
-        pass
+        cloud = self.cloud_factory(profile, region)
+        items = cloud.list_auto_scaling_groups()
+        items = [
+            self._asdict(i, ["AutoScalingGroupName"])
+            for i in items
+        ]
+        self.cmd_wrapper.items(items)
 
     @click.command("asg.update")
     def asg_update(self):
@@ -172,10 +180,10 @@ class AwsCli:
         List rds/aurora snapshots.
         """
         cloud = self.cloud_factory(profile, region)
-        snapshots = cloud.list_rds_snapshots()
+        items = cloud.list_rds_snapshots()
         items = [
             self._asdict(i, ["DBSnapshotIdentifier", "SnapshotCreateTime", "Status"])
-            for i in snapshots
+            for i in items
         ]
         self.cmd_wrapper.items(items)
 

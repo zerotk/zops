@@ -9,7 +9,7 @@ aws_owners:
 # Maps directories with cluster names.
 clusters_map:
   "/creditapp": "mi-tier3"
-  "/tier1": "tier1"
+  "/tier1": "mi-tier1"
   "/tier3": "mi-tier3"
   "/t3can": "mi-tier3"
   "/t3usa": "t3usa"
@@ -23,12 +23,14 @@ aws_profiles_map:
   intranet: "mi-is"
   nomad: "mi-is"
   peb: "mi-tier3"
-  pi: "mi-pi"
-  qa: "mi-qa"
-  ps: "mi-qa"
   perf: "mi-qa"
+  pi: "mi-pi"
+  ps: "mi-qa"
+  qa: "mi-qa"
   sandbox: "mi-sandbox"
   stage: "mi-stage"
+  tier1: "mi-tier1"
+  tier3: "mi-tier3"
   unhaggle: "mi-unhaggle"
 
 clusters:

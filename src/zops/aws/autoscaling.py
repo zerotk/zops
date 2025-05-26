@@ -19,7 +19,6 @@ class AutoScalingGroup:
         * [InstanceRefreshes]: A list of associated instance refreshes.
         * start_instance_refresh: A method that starts the instance-refresh.
         """
-
         if profile_name is None:
             profile_name = asg_seed.split("-")
             profile_name = cls.PROFILE_MAP.get(

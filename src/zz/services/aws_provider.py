@@ -34,6 +34,9 @@ class AwsProvider:
     def ec2_resource(self) -> Any:
         return self.session.resource("ec2", region_name=self.region)
 
+    def autoscaling_client(self) -> Any:
+        return self.session.client("autoscaling")
+
     def rds_client(self) -> Any:
         return self.session.client("rds")
 
@@ -174,12 +177,13 @@ class Cloud:
 
     def list_secrets(self, sort_by="Name"):
         import operator
+        import addict
 
-        from addict import Dict as AttrDict
-
-        secrets = self._aws.secrets_client()
-        result = secrets.list_secrets(IncludePlannedDeletion=True)["SecretList"]
-        result = [AttrDict(i) for i in sorted(result, key=operator.itemgetter(sort_by))]
+        result = self._aws.secrets_client().list_secrets(IncludePlannedDeletion=True)["SecretList"]
+        result = [
+            addict.Dict(i)
+            for i in sorted(result, key=operator.itemgetter(sort_by))
+        ]
         return result
 
     def list_ami_images(self, sort_by="creation_date"):
@@ -194,6 +198,18 @@ class Cloud:
             for i in sorted(
                 ec2.images.filter(Owners=["self"]), key=operator.attrgetter(sort_by)
             )
+        ]
+
+    def list_auto_scaling_groups(self, sort_by="AutoScalingGroupName"):
+        """
+        """
+        import operator
+        import addict
+
+        groups = self._aws.autoscaling_client().describe_auto_scaling_groups()["AutoScalingGroups"]
+        return [
+            addict.Dict(i)
+            for i in sorted(groups, key=operator.itemgetter(sort_by))
         ]
 
     def as_dict(self):
