@@ -32,6 +32,7 @@ aws_profiles_map:
   tier1: "mi-tier1"
   tier3: "mi-tier3"
   unhaggle: "mi-unhaggle"
+  tier1: "mi-tier1"
 
 clusters:
   # This is the account used to build, provide and consume AMIs.
