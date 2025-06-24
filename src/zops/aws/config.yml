@@ -35,6 +35,11 @@ aws_profiles_map:
 
 clusters:
   # This is the account used to build, provide and consume AMIs.
+  as24-playground:
+    aws_id: 347998200077
+    regions:
+      - eu-west-1
+
   unhaggle-ami:
     aws_id: 299378319612
     regions:

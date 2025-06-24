@@ -522,8 +522,9 @@ def asg_update(asg_seed, desired_capacity, profile, region):
 
 @click.command(name="params.list")
 @click.argument("cluster")
-@click.option("--prefix", default="/DJANGO")
-def params_list(cluster, prefix):
+@click.option("--prefix", default="/")
+@click.option("--region", default=None)
+def params_list(cluster, prefix, region):
     """
     List parameters from the selected cluster.
 
@@ -532,8 +533,12 @@ def params_list(cluster, prefix):
     """
     load_config()
     cluster = Cluster.get_cluster(cluster)
+    if region is None:
+        regions = cluster.regions
+    else:
+        regions = [region]
     result = {}
-    for i_region in cluster.regions:
+    for i_region in regions:
         ssm = cluster.ssm_client(i_region)
         parameters_pages = ssm.get_paginator("get_parameters_by_path").paginate(
             Path=prefix,
