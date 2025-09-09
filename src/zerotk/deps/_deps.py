@@ -1,6 +1,7 @@
 from typing import Any
 import functools
 import click
+import types
 from dataclasses import field, dataclass
 
 
@@ -129,7 +130,6 @@ class Command(Dependency):
             )
         return result
 
-
 # Deps
 
 
@@ -172,10 +172,15 @@ class Deps:
 def instance__post_init(self):
     dependencies = {}
     assert hasattr(self, "deps")
+
     for i_name, i_decl in self.__deps_decl__.items():
         dependency = dependencies[i_name] = i_decl.create(self, i_name)
         self.deps.name = f"{self.deps.name}.{i_name}"
         setattr(self, i_name, dependency)
+
+    object_injections = injections.get(self.__class__, dict())
+    for i_name, i_func in object_injections.items():
+        setattr(self, i_name, types.MethodType(i_func, self))
 
 
 def instance__main(self):
@@ -259,3 +264,28 @@ def define(maybe_cls=None, **kwargs):
         return wrap
 
     return wrap(maybe_cls)
+
+
+injections: dict = {}
+
+def inject(maybe_def=None, **kwargs):
+
+    def wrap(func_: types.FunctionType):
+        import inspect
+
+        sig: inspect.Signature = inspect.signature(func_)
+        params = list(sig.parameters.values())
+        if not params:
+            raise ValueError(
+                f"Function {func_.__name__} has no parameters to inject. "
+                "Please add at least one parameter with a type annotation."
+            )
+        first_param = params[0]
+        obj_functions = injections.setdefault(first_param.annotation, dict())
+        obj_functions[func_.__name__] = func_
+        return func_
+
+    if maybe_def is None:
+        return wrap
+
+    return wrap(maybe_def)

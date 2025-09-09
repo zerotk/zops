@@ -137,12 +137,10 @@ class Text:
         :return list(unicode):
             Returns a list with fixed size of maxsplit + 1.
         """
-        import string
-
         if reversed:
-            split = string.rsplit
+            split = lambda s, sep, maxsplit: s.rsplit(sep, maxsplit)
         else:
-            split = string.split
+            split = lambda s, sep, maxsplit: s.split(sep, maxsplit)
 
         if maxsplit is None:
             result = split(s, sep)

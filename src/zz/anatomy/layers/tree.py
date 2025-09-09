@@ -47,12 +47,11 @@ class AnatomyFile:
         filename = expand(filename, variables)
 
         if self.content.startswith("!"):
-            content_filename = self.content[1:]
             template_filename = "{{ ANATOMY.templates_dir }}/{{ ANATOMY.template}}"
-            template_filename = f"{template_filename}/{content_filename}"
             template_filename = expand(template_filename, variables)
-            content_filename = expand(template_filename, variables)
-            self.content = open(content_filename).read()
+            content_filename = self.content[1:]
+            template_filename = f"{template_filename}/{content_filename}"
+            self.content = open(template_filename).read()
 
         # Use alternative variable/block expansion when working with Ansible
         # file.

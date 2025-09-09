@@ -1,6 +1,6 @@
 import click
 
-import zops.aws.cli_commands as aws_commands
+import zops.aws.__main__ as aws_commands
 
 
 @click.group()
