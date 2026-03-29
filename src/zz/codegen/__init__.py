@@ -34,13 +34,21 @@ class CodegenEngine:
 
             return result
 
-        def _create_file(filename: Path, contents: Dict):
+        def _create_file(filename: Path, contents: Dict, is_executable: bool = False):
             filename.parent.mkdir(parents=True, exist_ok=True)
 
             # Cleanup EOL in the end of context making sure we have just one EOL.
             contents = contents.replace(" \n", "\n").rstrip("\n") + "\n"
 
             filename.write_text(contents)
+            if is_executable:
+              filename.chmod(0o755)
+
+        def _expand_filename(filename: str, variables):
+            return self.template_engine.run(filename, variables)
+
+        def _get_template_contents(template_dir: Path, template_filename: Path, variables):
+            return (template_dir / template_filename).read_text()
 
         template_dir = playbook_filename.parent / "templates"
 
@@ -51,15 +59,31 @@ class CodegenEngine:
         for i_template in templates:
             dataset_index = i_template.get("dataset", "")
             filenames = i_template["filenames"]
-            for j_name, j_values in _get_dataset_items(datasets, dataset_index):
+            variables_default = {}
+            for j_name, j_variables in _get_dataset_items(datasets, dataset_index):
+                if j_name == "__default__":
+                    self.console.title(f"{dataset_index}::{j_name} Loading default variables values.")
+                    variables_default = j_variables
+                if j_name.startswith("__") and j_name.endswith("__"):
+                    self.console.title(f"{dataset_index}::{j_name} SKIPPPED")
+                    continue
                 self.console.title(f"{dataset_index}::{j_name}")
-                for k_filename in filenames:
-                    filename = self.filesystem.Path(
-                        k_filename.replace("__name__", j_name)
+                for k_template_filename in filenames:
+                    template_filename = (template_dir / k_template_filename)
+                    template_contents = template_filename.read_text()
+                    is_executable = template_filename.stat().st_mode & 0o111
+                    variables_apply = variables_default.copy()
+                    variables_apply.update(j_variables)
+                    target_filename = playbook_filename.parent.parent / self.filesystem.Path(
+                        _expand_filename(str(k_template_filename), variables_apply)
                     )
-                    filename = playbook_filename.parent.parent / filename
-                    self.console.item(str(filename))
-                    contents = self.template_engine.run(
-                        open(f"{template_dir}/{k_filename}", "r").read(), j_values
+                    self.console.item(str(target_filename))
+                    _create_file(
+                        target_filename,
+                        self.template_engine.run(
+                            template_contents,
+                            variables_apply,
+                            alt_expansion=template_filename.suffix in (".yml", ".yaml")
+                        ),
+                        is_executable=is_executable
                     )
-                    _create_file(filename, contents)
