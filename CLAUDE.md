@@ -58,6 +58,21 @@ class MyService:
 - Sharing is controlled by passing the same `deps.Deps()` instance at construction time
 - `instance.main()` is auto-generated and builds the Click group/command tree for CLI entry
 
+### Finding command implementations
+
+The `zz` CLI commands are implemented as methods decorated with `@click.command(...)` inside `@deps.define` classes in `src/zz/cli/`:
+
+| CLI subcommand | Class | File |
+|---|---|---|
+| `zz aws` | `AwsCli` | `src/zz/cli/aws.py` |
+| `zz codegen` | `CodegenCli` | `src/zz/cli/codegen.py` |
+| `zz tf` | `TerraformCli` | `src/zz/cli/tf.py` |
+| `zz git` | `GitCli` | `src/zz/cli/git.py` |
+
+Each method decorated with `@click.command("<name>")` maps directly to `zz <subcommand> <name>`. For example, `zz aws ec2.list` is implemented by the `ec2_list` method in `AwsCli`.
+
+The entry point wiring is in `src/zz/__main__.py`, which assembles all CLI classes via `deps.Command`.
+
 ### `zz` service layer (`src/zz/services/`)
 
 Singleton services injected throughout the app:
